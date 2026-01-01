@@ -86,12 +86,14 @@ To-do-app/
 - ✅ Planning page for each task (click task to open)
 - ✅ Notes field with auto-save functionality
 - ✅ Navigation between list and detail views
+- ✅ Priority levels (High/Medium/Low)
+- ✅ Priority-based sorting with colored indicators
+- ✅ Visual priority system (red/yellow/green circles)
 
 ## Future Enhancements
 
 - Categories/tags
 - Due dates
-- Priority levels
 - Search/filter
 - Enhanced UI design
 - Keyboard shortcuts

@@ -26,6 +26,22 @@ function render() {
     }
 }
 
+// Get priority value for sorting
+function getPriorityValue(priority) {
+    const priorityMap = { 'high': 3, 'medium': 2, 'low': 1 };
+    return priorityMap[priority] || 2;
+}
+
+// Sort todos by priority (high to low) then by creation date
+function getSortedTodos() {
+    return todos.map((todo, index) => ({ todo, index }))
+        .sort((a, b) => {
+            const priorityDiff = getPriorityValue(b.todo.priority) - getPriorityValue(a.todo.priority);
+            if (priorityDiff !== 0) return priorityDiff;
+            return (a.todo.createdAt || 0) - (b.todo.createdAt || 0);
+        });
+}
+
 // Render list view
 function renderListView() {
     // Show list view, hide detail view
@@ -35,7 +51,9 @@ function renderListView() {
     const todoList = document.getElementById('todoList');
     todoList.innerHTML = '';
 
-    todos.forEach((todo, index) => {
+    const sortedTodos = getSortedTodos();
+
+    sortedTodos.forEach(({ todo, index }) => {
         const li = document.createElement('li');
         li.className = `todo-item ${todo.completed ? 'completed' : ''}`;
 
@@ -78,6 +96,10 @@ function renderListView() {
             setTimeout(() => editInput.focus(), 0);
         } else {
             // Normal mode
+            const priorityIndicator = document.createElement('span');
+            priorityIndicator.className = `priority-indicator priority-${todo.priority || 'medium'}`;
+            priorityIndicator.textContent = '●';
+
             const label = document.createElement('label');
             label.textContent = todo.text;
             label.addEventListener('click', (e) => {
@@ -96,6 +118,7 @@ function renderListView() {
             deleteBtn.addEventListener('click', () => deleteTodo(index));
 
             li.appendChild(checkbox);
+            li.appendChild(priorityIndicator);
             li.appendChild(label);
             li.appendChild(editBtn);
             li.appendChild(deleteBtn);
@@ -117,7 +140,9 @@ function addTodo() {
     todos.push({
         text: text,
         completed: false,
-        notes: ''
+        notes: '',
+        priority: 'medium',
+        createdAt: Date.now()
     });
 
     input.value = '';
@@ -177,6 +202,16 @@ function renderDetailView() {
 
     // Set the title
     document.getElementById('detailTitle').textContent = todo.text;
+
+    // Set the priority
+    const prioritySelect = document.getElementById('prioritySelect');
+    prioritySelect.value = todo.priority || 'medium';
+
+    // Auto-save priority on change
+    prioritySelect.onchange = () => {
+        todos[currentTodoIndex].priority = prioritySelect.value;
+        saveTodos();
+    };
 
     // Set the notes
     const notesInput = document.getElementById('notesInput');

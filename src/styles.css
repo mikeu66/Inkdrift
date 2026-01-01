@@ -85,6 +85,23 @@ h1 {
     cursor: pointer;
 }
 
+.priority-indicator {
+    font-size: 16px;
+    margin-right: 5px;
+}
+
+.priority-high {
+    color: #ff4444;
+}
+
+.priority-medium {
+    color: #ffaa00;
+}
+
+.priority-low {
+    color: #44ff44;
+}
+
 .todo-item label {
     flex: 1;
     cursor: pointer;
@@ -225,4 +242,31 @@ h2 {
 .notes-input:focus {
     outline: none;
     border-color: #4a9eff;
+}
+
+.priority-section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.priority-select {
+    padding: 8px 12px;
+    font-size: 14px;
+    background-color: #2a2a2a;
+    border: 1px solid #3a3a3a;
+    border-radius: 4px;
+    color: #e0e0e0;
+    cursor: pointer;
+}
+
+.priority-select:focus {
+    outline: none;
+    border-color: #4a9eff;
+}
+
+.priority-select option {
+    background-color: #2a2a2a;
+    color: #e0e0e0;
 }
