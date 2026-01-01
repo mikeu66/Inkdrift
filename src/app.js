@@ -306,28 +306,40 @@ function handleDragEnd(e) {
 }
 
 function setupDropZone(element, isInProgressZone) {
-    element.addEventListener('dragover', (e) => {
+    // Remove old listeners by cloning and replacing
+    const newElement = element.cloneNode(true);
+    element.parentNode.replaceChild(newElement, element);
+
+    // Get the fresh element reference
+    const dropZone = isInProgressZone ?
+        document.getElementById('inProgressList') :
+        document.getElementById('todoList');
+
+    let dragCounter = 0;
+
+    dropZone.addEventListener('dragenter', (e) => {
         e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-        element.classList.add('drag-over');
+        dragCounter++;
+        dropZone.classList.add('drag-over');
     });
 
-    element.addEventListener('dragleave', (e) => {
-        // Only remove if we're leaving the drop zone entirely
-        const rect = element.getBoundingClientRect();
-        if (
-            e.clientX < rect.left ||
-            e.clientX >= rect.right ||
-            e.clientY < rect.top ||
-            e.clientY >= rect.bottom
-        ) {
-            element.classList.remove('drag-over');
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    });
+
+    dropZone.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        dragCounter--;
+        if (dragCounter === 0) {
+            dropZone.classList.remove('drag-over');
         }
     });
 
-    element.addEventListener('drop', (e) => {
+    dropZone.addEventListener('drop', (e) => {
         e.preventDefault();
-        element.classList.remove('drag-over');
+        dragCounter = 0;
+        dropZone.classList.remove('drag-over');
 
         if (draggedIndex !== null) {
             // Toggle in-progress status based on drop zone
@@ -335,11 +347,6 @@ function setupDropZone(element, isInProgressZone) {
             saveTodos();
             render();
         }
-    });
-
-    // Cleanup on drag end (safety net)
-    element.addEventListener('dragend', () => {
-        element.classList.remove('drag-over');
     });
 }
 
