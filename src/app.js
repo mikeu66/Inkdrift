@@ -53,6 +53,10 @@ function renderListView() {
     inProgressList.innerHTML = '';
     todoList.innerHTML = '';
 
+    // Set up drop zones
+    setupDropZone(inProgressList, true);
+    setupDropZone(todoList, false);
+
     const sortedTodos = getSortedTodos();
 
     // Separate in-progress and regular todos
@@ -83,6 +87,12 @@ function renderListView() {
 function createTodoElement(todo, index) {
     const li = document.createElement('li');
     li.className = `todo-item ${todo.completed ? 'completed' : ''} ${todo.inProgress ? 'in-progress-item' : ''}`;
+    li.draggable = true;
+    li.dataset.index = index;
+
+    // Drag events
+    li.addEventListener('dragstart', handleDragStart);
+    li.addEventListener('dragend', handleDragEnd);
 
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
@@ -272,6 +282,54 @@ function openDetailView(index) {
 function backToList() {
     currentView = 'list';
     currentTodoIndex = null;
+    render();
+}
+
+// Drag and drop functionality
+let draggedIndex = null;
+
+function handleDragStart(e) {
+    draggedIndex = parseInt(e.target.dataset.index);
+    e.target.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', e.target.innerHTML);
+}
+
+function handleDragEnd(e) {
+    e.target.classList.remove('dragging');
+    draggedIndex = null;
+}
+
+function setupDropZone(element, isInProgressZone) {
+    element.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        element.classList.add('drag-over');
+    });
+
+    element.addEventListener('dragleave', (e) => {
+        if (e.target === element) {
+            element.classList.remove('drag-over');
+        }
+    });
+
+    element.addEventListener('drop', (e) => {
+        e.preventDefault();
+        element.classList.remove('drag-over');
+
+        if (draggedIndex !== null) {
+            // Toggle in-progress status based on drop zone
+            todos[draggedIndex].inProgress = isInProgressZone;
+            saveTodos();
+            render();
+        }
+    });
+}
+
+// Toggle in-progress status
+function toggleInProgress(index) {
+    todos[index].inProgress = !todos[index].inProgress;
+    saveTodos();
     render();
 }
 

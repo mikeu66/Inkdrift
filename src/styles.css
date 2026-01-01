@@ -124,6 +124,17 @@ h1 {
     background-color: rgba(77, 208, 225, 0.12);
 }
 
+.todo-item.dragging {
+    opacity: 0.5;
+    cursor: move;
+}
+
+.drag-over {
+    background-color: rgba(77, 208, 225, 0.15);
+    border: 2px dashed #4dd0e1;
+    border-radius: 4px;
+}
+
 .todo-item input[type="checkbox"] {
     width: 18px;
     height: 18px;
