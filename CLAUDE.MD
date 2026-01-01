@@ -83,6 +83,9 @@ To-do-app/
 
 - ✅ Edit existing items (inline editing with Save/Cancel)
 - ✅ Keyboard shortcuts (Enter to save, Escape to cancel while editing)
+- ✅ Planning page for each task (click task to open)
+- ✅ Notes field with auto-save functionality
+- ✅ Navigation between list and detail views
 
 ## Future Enhancements
 

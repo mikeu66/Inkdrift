@@ -1,5 +1,7 @@
 let todos = [];
 let editingIndex = null;
+let currentView = 'list'; // 'list' or 'detail'
+let currentTodoIndex = null;
 
 // Load todos from localStorage on startup
 function loadTodos() {
@@ -7,7 +9,7 @@ function loadTodos() {
     if (saved) {
         todos = JSON.parse(saved);
     }
-    renderTodos();
+    render();
 }
 
 // Save todos to localStorage
@@ -15,8 +17,21 @@ function saveTodos() {
     localStorage.setItem('todos', JSON.stringify(todos));
 }
 
-// Render all todos to the DOM
-function renderTodos() {
+// Main render function
+function render() {
+    if (currentView === 'list') {
+        renderListView();
+    } else if (currentView === 'detail') {
+        renderDetailView();
+    }
+}
+
+// Render list view
+function renderListView() {
+    // Show list view, hide detail view
+    document.getElementById('listView').style.display = 'block';
+    document.getElementById('detailView').style.display = 'none';
+
     const todoList = document.getElementById('todoList');
     todoList.innerHTML = '';
 
@@ -65,9 +80,9 @@ function renderTodos() {
             // Normal mode
             const label = document.createElement('label');
             label.textContent = todo.text;
-            label.addEventListener('click', () => {
-                checkbox.checked = !checkbox.checked;
-                toggleTodo(index);
+            label.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openDetailView(index);
             });
 
             const editBtn = document.createElement('button');
@@ -101,32 +116,33 @@ function addTodo() {
 
     todos.push({
         text: text,
-        completed: false
+        completed: false,
+        notes: ''
     });
 
     input.value = '';
     saveTodos();
-    renderTodos();
+    render();
 }
 
 // Toggle todo completion status
 function toggleTodo(index) {
     todos[index].completed = !todos[index].completed;
     saveTodos();
-    renderTodos();
+    render();
 }
 
 // Delete a todo
 function deleteTodo(index) {
     todos.splice(index, 1);
     saveTodos();
-    renderTodos();
+    render();
 }
 
 // Start editing a todo
 function startEdit(index) {
     editingIndex = index;
-    renderTodos();
+    render();
 }
 
 // Save edited todo
@@ -138,13 +154,53 @@ function saveEdit(index, newText) {
     todos[index].text = trimmedText;
     editingIndex = null;
     saveTodos();
-    renderTodos();
+    render();
 }
 
 // Cancel editing
 function cancelEdit() {
     editingIndex = null;
-    renderTodos();
+    render();
+}
+
+// Render detail view
+function renderDetailView() {
+    // Hide list view, show detail view
+    document.getElementById('listView').style.display = 'none';
+    document.getElementById('detailView').style.display = 'block';
+
+    const todo = todos[currentTodoIndex];
+    if (!todo) {
+        backToList();
+        return;
+    }
+
+    // Set the title
+    document.getElementById('detailTitle').textContent = todo.text;
+
+    // Set the notes
+    const notesInput = document.getElementById('notesInput');
+    notesInput.value = todo.notes || '';
+
+    // Auto-save notes on input
+    notesInput.oninput = () => {
+        todos[currentTodoIndex].notes = notesInput.value;
+        saveTodos();
+    };
+}
+
+// Open detail view for a todo
+function openDetailView(index) {
+    currentView = 'detail';
+    currentTodoIndex = index;
+    render();
+}
+
+// Go back to list view
+function backToList() {
+    currentView = 'list';
+    currentTodoIndex = null;
+    render();
 }
 
 // Event listeners
@@ -154,6 +210,7 @@ document.getElementById('todoInput').addEventListener('keypress', (e) => {
         addTodo();
     }
 });
+document.getElementById('backBtn').addEventListener('click', backToList);
 
 // Load todos when page loads
 loadTodos();

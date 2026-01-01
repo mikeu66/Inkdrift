@@ -7,6 +7,10 @@ A simple, dark-mode desktop to-do application built with Electron.
 - Add, edit, and delete to-do items
 - Check off completed tasks
 - Inline editing with Save/Cancel buttons
+- Planning page for each task with notes
+- Click any task to open detailed planning view
+- Auto-save notes as you type
+- Navigation with back button
 - Keyboard shortcuts (Enter to save, Escape to cancel)
 - Persistent storage (tasks saved locally)
 - Dark mode UI
