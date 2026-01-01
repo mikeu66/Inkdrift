@@ -82,7 +82,7 @@ function renderListView() {
 // Create todo element
 function createTodoElement(todo, index) {
     const li = document.createElement('li');
-    li.className = `todo-item ${todo.completed ? 'completed' : ''}`;
+    li.className = `todo-item ${todo.completed ? 'completed' : ''} ${todo.inProgress ? 'in-progress-item' : ''}`;
 
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';

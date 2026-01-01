@@ -31,6 +31,16 @@ h1 {
     margin-top: 10px;
 }
 
+.in-progress-header {
+    font-size: 16px;
+    font-weight: 700;
+    color: #4dd0e1;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 15px;
+    margin-top: 10px;
+}
+
 .in-progress-section {
     margin-bottom: 30px;
     min-height: 40px;
@@ -94,6 +104,16 @@ h1 {
 
 .todo-item:hover {
     background-color: #303030;
+}
+
+.todo-item.in-progress-item {
+    background-color: rgba(77, 208, 225, 0.08);
+    border-left: 3px solid #4dd0e1;
+    padding-left: 9px;
+}
+
+.todo-item.in-progress-item:hover {
+    background-color: rgba(77, 208, 225, 0.12);
 }
 
 .todo-item input[type="checkbox"] {
