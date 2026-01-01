@@ -21,10 +21,27 @@ h1 {
     color: #ffffff;
 }
 
+.section-header {
+    font-size: 14px;
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+    margin-top: 10px;
+}
+
+.in-progress-section {
+    margin-bottom: 30px;
+    min-height: 40px;
+}
+
 .input-section {
     display: flex;
     gap: 10px;
-    margin-bottom: 20px;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #3a3a3a;
 }
 
 #todoInput {
@@ -269,4 +286,23 @@ h2 {
 .priority-select option {
     background-color: #2a2a2a;
     color: #e0e0e0;
+}
+
+.in-progress-section-detail {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.in-progress-section-detail label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.in-progress-checkbox {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
 }

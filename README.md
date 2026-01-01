@@ -9,11 +9,14 @@ A simple, dark-mode desktop to-do application built with Electron.
 - Inline editing with Save/Cancel buttons
 - Planning page for each task with notes
 - Priority levels (High/Medium/Low) with colored indicators
+- In Progress section for actively worked-on tasks
+- Mark tasks as "In Progress" from planning page
 - Auto-sorting by priority and creation date
 - Click any task to open detailed planning view
-- Auto-save notes and priority as you type
+- Auto-save notes, priority, and status as you type
 - Navigation with back button
 - Visual priority system (🔴 red, 🟡 yellow, 🟢 green circles)
+- Add new task input at bottom of list
 - Keyboard shortcuts (Enter to save, Escape to cancel)
 - Persistent storage (tasks saved locally)
 - Dark mode UI

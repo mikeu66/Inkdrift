@@ -89,6 +89,9 @@ To-do-app/
 - ✅ Priority levels (High/Medium/Low)
 - ✅ Priority-based sorting with colored indicators
 - ✅ Visual priority system (red/yellow/green circles)
+- ✅ In Progress section for active tasks
+- ✅ Mark tasks as "In Progress" from planning page
+- ✅ Add new task input moved to bottom of list
 
 ## Future Enhancements
 

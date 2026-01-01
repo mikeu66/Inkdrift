@@ -48,84 +48,110 @@ function renderListView() {
     document.getElementById('listView').style.display = 'block';
     document.getElementById('detailView').style.display = 'none';
 
+    const inProgressList = document.getElementById('inProgressList');
     const todoList = document.getElementById('todoList');
+    inProgressList.innerHTML = '';
     todoList.innerHTML = '';
 
     const sortedTodos = getSortedTodos();
 
-    sortedTodos.forEach(({ todo, index }) => {
-        const li = document.createElement('li');
-        li.className = `todo-item ${todo.completed ? 'completed' : ''}`;
+    // Separate in-progress and regular todos
+    const inProgressTodos = sortedTodos.filter(({ todo }) => todo.inProgress && !todo.completed);
+    const regularTodos = sortedTodos.filter(({ todo }) => !todo.inProgress && !todo.completed);
+    const completedTodos = sortedTodos.filter(({ todo }) => todo.completed);
 
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.checked = todo.completed;
-        checkbox.addEventListener('change', () => toggleTodo(index));
+    // Render in-progress items
+    inProgressTodos.forEach(({ todo, index }) => {
+        const li = createTodoElement(todo, index);
+        inProgressList.appendChild(li);
+    });
 
-        // Check if this item is being edited
-        if (editingIndex === index) {
-            // Edit mode
-            const editInput = document.createElement('input');
-            editInput.type = 'text';
-            editInput.className = 'edit-input';
-            editInput.value = todo.text;
-            editInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    saveEdit(index, editInput.value);
-                } else if (e.key === 'Escape') {
-                    cancelEdit();
-                }
-            });
-
-            const saveBtn = document.createElement('button');
-            saveBtn.textContent = 'Save';
-            saveBtn.className = 'save-btn';
-            saveBtn.addEventListener('click', () => saveEdit(index, editInput.value));
-
-            const cancelBtn = document.createElement('button');
-            cancelBtn.textContent = 'Cancel';
-            cancelBtn.className = 'cancel-btn';
-            cancelBtn.addEventListener('click', () => cancelEdit());
-
-            li.appendChild(checkbox);
-            li.appendChild(editInput);
-            li.appendChild(saveBtn);
-            li.appendChild(cancelBtn);
-
-            // Auto-focus the input
-            setTimeout(() => editInput.focus(), 0);
-        } else {
-            // Normal mode
-            const priorityIndicator = document.createElement('span');
-            priorityIndicator.className = `priority-indicator priority-${todo.priority || 'medium'}`;
-            priorityIndicator.textContent = '●';
-
-            const label = document.createElement('label');
-            label.textContent = todo.text;
-            label.addEventListener('click', (e) => {
-                e.stopPropagation();
-                openDetailView(index);
-            });
-
-            const editBtn = document.createElement('button');
-            editBtn.textContent = 'Edit';
-            editBtn.className = 'edit-btn';
-            editBtn.addEventListener('click', () => startEdit(index));
-
-            const deleteBtn = document.createElement('button');
-            deleteBtn.textContent = 'Delete';
-            deleteBtn.className = 'delete-btn';
-            deleteBtn.addEventListener('click', () => deleteTodo(index));
-
-            li.appendChild(checkbox);
-            li.appendChild(priorityIndicator);
-            li.appendChild(label);
-            li.appendChild(editBtn);
-            li.appendChild(deleteBtn);
-        }
-
+    // Render regular items
+    regularTodos.forEach(({ todo, index }) => {
+        const li = createTodoElement(todo, index);
         todoList.appendChild(li);
     });
+
+    // Render completed items
+    completedTodos.forEach(({ todo, index }) => {
+        const li = createTodoElement(todo, index);
+        todoList.appendChild(li);
+    });
+}
+
+// Create todo element
+function createTodoElement(todo, index) {
+    const li = document.createElement('li');
+    li.className = `todo-item ${todo.completed ? 'completed' : ''}`;
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = todo.completed;
+    checkbox.addEventListener('change', () => toggleTodo(index));
+
+    // Check if this item is being edited
+    if (editingIndex === index) {
+        // Edit mode
+        const editInput = document.createElement('input');
+        editInput.type = 'text';
+        editInput.className = 'edit-input';
+        editInput.value = todo.text;
+        editInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                saveEdit(index, editInput.value);
+            } else if (e.key === 'Escape') {
+                cancelEdit();
+            }
+        });
+
+        const saveBtn = document.createElement('button');
+        saveBtn.textContent = 'Save';
+        saveBtn.className = 'save-btn';
+        saveBtn.addEventListener('click', () => saveEdit(index, editInput.value));
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.className = 'cancel-btn';
+        cancelBtn.addEventListener('click', () => cancelEdit());
+
+        li.appendChild(checkbox);
+        li.appendChild(editInput);
+        li.appendChild(saveBtn);
+        li.appendChild(cancelBtn);
+
+        // Auto-focus the input
+        setTimeout(() => editInput.focus(), 0);
+    } else {
+        // Normal mode
+        const priorityIndicator = document.createElement('span');
+        priorityIndicator.className = `priority-indicator priority-${todo.priority || 'medium'}`;
+        priorityIndicator.textContent = '●';
+
+        const label = document.createElement('label');
+        label.textContent = todo.text;
+        label.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openDetailView(index);
+        });
+
+        const editBtn = document.createElement('button');
+        editBtn.textContent = 'Edit';
+        editBtn.className = 'edit-btn';
+        editBtn.addEventListener('click', () => startEdit(index));
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.addEventListener('click', () => deleteTodo(index));
+
+        li.appendChild(checkbox);
+        li.appendChild(priorityIndicator);
+        li.appendChild(label);
+        li.appendChild(editBtn);
+        li.appendChild(deleteBtn);
+    }
+
+    return li;
 }
 
 // Add a new todo
@@ -142,7 +168,8 @@ function addTodo() {
         completed: false,
         notes: '',
         priority: 'medium',
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        inProgress: false
     });
 
     input.value = '';
@@ -210,6 +237,16 @@ function renderDetailView() {
     // Auto-save priority on change
     prioritySelect.onchange = () => {
         todos[currentTodoIndex].priority = prioritySelect.value;
+        saveTodos();
+    };
+
+    // Set the in-progress checkbox
+    const inProgressCheckbox = document.getElementById('inProgressCheckbox');
+    inProgressCheckbox.checked = todo.inProgress || false;
+
+    // Auto-save in-progress status on change
+    inProgressCheckbox.onchange = () => {
+        todos[currentTodoIndex].inProgress = inProgressCheckbox.checked;
         saveTodos();
     };
 
