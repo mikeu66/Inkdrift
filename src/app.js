@@ -298,6 +298,11 @@ function handleDragStart(e) {
 function handleDragEnd(e) {
     e.target.classList.remove('dragging');
     draggedIndex = null;
+
+    // Remove any lingering drag-over classes
+    document.querySelectorAll('.drag-over').forEach(el => {
+        el.classList.remove('drag-over');
+    });
 }
 
 function setupDropZone(element, isInProgressZone) {
@@ -308,7 +313,14 @@ function setupDropZone(element, isInProgressZone) {
     });
 
     element.addEventListener('dragleave', (e) => {
-        if (e.target === element) {
+        // Only remove if we're leaving the drop zone entirely
+        const rect = element.getBoundingClientRect();
+        if (
+            e.clientX < rect.left ||
+            e.clientX >= rect.right ||
+            e.clientY < rect.top ||
+            e.clientY >= rect.bottom
+        ) {
             element.classList.remove('drag-over');
         }
     });
@@ -323,6 +335,11 @@ function setupDropZone(element, isInProgressZone) {
             saveTodos();
             render();
         }
+    });
+
+    // Cleanup on drag end (safety net)
+    element.addEventListener('dragend', () => {
+        element.classList.remove('drag-over');
     });
 }
 
