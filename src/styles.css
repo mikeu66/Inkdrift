@@ -1,0 +1,111 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    background-color: #1a1a1a;
+    color: #e0e0e0;
+    padding: 20px;
+}
+
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+h1 {
+    margin-bottom: 20px;
+    color: #ffffff;
+}
+
+.input-section {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+#todoInput {
+    flex: 1;
+    padding: 10px;
+    font-size: 14px;
+    background-color: #2a2a2a;
+    border: 1px solid #3a3a3a;
+    border-radius: 4px;
+    color: #e0e0e0;
+}
+
+#todoInput::placeholder {
+    color: #666;
+}
+
+#todoInput:focus {
+    outline: none;
+    border-color: #4a9eff;
+}
+
+#addBtn {
+    padding: 10px 20px;
+    font-size: 14px;
+    background-color: #4a9eff;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#addBtn:hover {
+    background-color: #3a8eef;
+}
+
+.todo-list {
+    list-style: none;
+}
+
+.todo-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    margin-bottom: 8px;
+    background-color: #2a2a2a;
+    border-radius: 4px;
+    border: 1px solid #3a3a3a;
+}
+
+.todo-item:hover {
+    background-color: #303030;
+}
+
+.todo-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.todo-item label {
+    flex: 1;
+    cursor: pointer;
+    user-select: none;
+}
+
+.todo-item.completed label {
+    text-decoration: line-through;
+    color: #666;
+}
+
+.delete-btn {
+    padding: 4px 10px;
+    font-size: 12px;
+    background-color: #ff4444;
+    color: #ffffff;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.delete-btn:hover {
+    background-color: #cc0000;
+}

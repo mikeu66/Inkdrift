@@ -2,12 +2,18 @@
 
 ## Project Overview
 
-This is a To-do application project. This document provides context and guidelines for Claude when working with this codebase.
+A simple, dark-mode desktop to-do application built with Electron. The app launches from the Mac dock and persists all tasks locally using localStorage.
 
 ## Project Structure
 
 ```
 To-do-app/
+├── src/
+│   ├── index.html     # Main UI with checkbox list
+│   ├── styles.css     # Dark mode styling
+│   └── app.js         # To-do logic & localStorage
+├── main.js            # Electron main process
+├── package.json       # Dependencies
 ├── README.md          # Project documentation
 └── CLAUDE.MD         # This file - AI assistant guidelines
 ```
@@ -38,7 +44,17 @@ To-do-app/
 
 ## Tech Stack
 
-*(To be updated as the project develops)*
+**Desktop:**
+- Electron (v28+) - Desktop application framework
+- Node.js - JavaScript runtime
+
+**Frontend:**
+- HTML5 - Markup
+- CSS3 - Dark mode styling (barebones, to be enhanced later)
+- Vanilla JavaScript (ES6+) - No frameworks
+
+**Storage:**
+- LocalStorage - Persistent data storage
 
 ## Project Goals
 
@@ -54,9 +70,31 @@ To-do-app/
 - Test changes when possible
 - Keep changes focused on the requested task
 
+## Current Features (v1.0)
+
+- ✅ Add new to-do items
+- ✅ Checkbox to mark items complete
+- ✅ Delete individual items
+- ✅ Persistent storage (survives app restart)
+- ✅ Dark mode UI
+- ✅ Launches from Mac dock
+
+## Future Enhancements
+
+- Edit existing items
+- Categories/tags
+- Due dates
+- Priority levels
+- Search/filter
+- Enhanced UI design
+- Keyboard shortcuts
+
 ## Project-Specific Conventions
 
-*(Add your specific conventions here as the project grows)*
+- Keep UI barebones for now - focus on functionality
+- All data stored in localStorage
+- Dark mode is default (no light mode toggle yet)
+- Minimal dependencies - vanilla JavaScript preferred
 
 ---
 
