@@ -41,6 +41,14 @@ h1 {
     margin-top: 10px;
 }
 
+.todo-header {
+    font-size: 14px;
+    font-weight: 600;
+    color: #999;
+    margin-bottom: 12px;
+    margin-top: 20px;
+}
+
 .in-progress-section {
     margin-bottom: 30px;
     min-height: 40px;
