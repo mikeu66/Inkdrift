@@ -306,40 +306,28 @@ function handleDragEnd(e) {
 }
 
 function setupDropZone(element, isInProgressZone) {
-    // Remove old listeners by cloning and replacing
-    const newElement = element.cloneNode(true);
-    element.parentNode.replaceChild(newElement, element);
-
-    // Get the fresh element reference
-    const dropZone = isInProgressZone ?
-        document.getElementById('inProgressList') :
-        document.getElementById('todoList');
-
-    let dragCounter = 0;
-
-    dropZone.addEventListener('dragenter', (e) => {
-        e.preventDefault();
-        dragCounter++;
-        dropZone.classList.add('drag-over');
-    });
-
-    dropZone.addEventListener('dragover', (e) => {
+    element.addEventListener('dragover', (e) => {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
+        element.classList.add('drag-over');
     });
 
-    dropZone.addEventListener('dragleave', (e) => {
-        e.preventDefault();
-        dragCounter--;
-        if (dragCounter === 0) {
-            dropZone.classList.remove('drag-over');
+    element.addEventListener('dragleave', (e) => {
+        // Only remove if we're leaving the drop zone entirely
+        const rect = element.getBoundingClientRect();
+        if (
+            e.clientX < rect.left ||
+            e.clientX >= rect.right ||
+            e.clientY < rect.top ||
+            e.clientY >= rect.bottom
+        ) {
+            element.classList.remove('drag-over');
         }
     });
 
-    dropZone.addEventListener('drop', (e) => {
+    element.addEventListener('drop', (e) => {
         e.preventDefault();
-        dragCounter = 0;
-        dropZone.classList.remove('drag-over');
+        element.classList.remove('drag-over');
 
         if (draggedIndex !== null) {
             // Toggle in-progress status based on drop zone
@@ -347,6 +335,11 @@ function setupDropZone(element, isInProgressZone) {
             saveTodos();
             render();
         }
+    });
+
+    // Cleanup on drag end (safety net)
+    element.addEventListener('dragend', () => {
+        element.classList.remove('drag-over');
     });
 }
 
