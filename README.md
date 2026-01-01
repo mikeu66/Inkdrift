@@ -4,8 +4,10 @@ A simple, dark-mode desktop to-do application built with Electron.
 
 ## Features
 
-- Add and delete to-do items
+- Add, edit, and delete to-do items
 - Check off completed tasks
+- Inline editing with Save/Cancel buttons
+- Keyboard shortcuts (Enter to save, Escape to cancel)
 - Persistent storage (tasks saved locally)
 - Dark mode UI
 - Runs as a native Mac application

@@ -96,6 +96,20 @@ h1 {
     color: #666;
 }
 
+.edit-btn {
+    padding: 4px 10px;
+    font-size: 12px;
+    background-color: #ffa500;
+    color: #ffffff;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.edit-btn:hover {
+    background-color: #ff8c00;
+}
+
 .delete-btn {
     padding: 4px 10px;
     font-size: 12px;
@@ -108,4 +122,47 @@ h1 {
 
 .delete-btn:hover {
     background-color: #cc0000;
+}
+
+.edit-input {
+    flex: 1;
+    padding: 6px 10px;
+    font-size: 14px;
+    background-color: #2a2a2a;
+    border: 1px solid #4a9eff;
+    border-radius: 4px;
+    color: #e0e0e0;
+}
+
+.edit-input:focus {
+    outline: none;
+    border-color: #5aafff;
+}
+
+.save-btn {
+    padding: 4px 10px;
+    font-size: 12px;
+    background-color: #4caf50;
+    color: #ffffff;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.save-btn:hover {
+    background-color: #45a049;
+}
+
+.cancel-btn {
+    padding: 4px 10px;
+    font-size: 12px;
+    background-color: #666;
+    color: #ffffff;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.cancel-btn:hover {
+    background-color: #555;
 }

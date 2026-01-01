@@ -79,9 +79,13 @@ To-do-app/
 - ✅ Dark mode UI
 - ✅ Launches from Mac dock
 
+## Current Features (v2.0)
+
+- ✅ Edit existing items (inline editing with Save/Cancel)
+- ✅ Keyboard shortcuts (Enter to save, Escape to cancel while editing)
+
 ## Future Enhancements
 
-- Edit existing items
 - Categories/tags
 - Due dates
 - Priority levels
