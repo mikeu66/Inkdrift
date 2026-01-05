@@ -7,7 +7,11 @@
     "start": "electron .",
     "build": "electron-builder"
   },
-  "keywords": ["todo", "electron", "desktop"],
+  "keywords": [
+    "todo",
+    "electron",
+    "desktop"
+  ],
   "author": "",
   "license": "ISC",
   "devDependencies": {
@@ -19,7 +23,8 @@
     "productName": "To-Do App",
     "mac": {
       "category": "public.app-category.productivity",
-      "target": "dmg"
+      "target": "dmg",
+      "icon": "src/logo.png"
     }
   }
 }

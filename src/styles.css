@@ -17,8 +17,20 @@ body {
 }
 
 h1 {
-    margin-bottom: 20px;
+    margin-bottom: 0;
     color: #ffffff;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.app-logo {
+    width: 60px;
+    height: auto;
 }
 
 .section-header {
@@ -61,6 +73,28 @@ h1 {
     padding-top: 20px;
     border-top: 1px solid #3a3a3a;
 }
+
+.view-completed-section {
+    text-align: center;
+    margin-top: 20px;
+    padding-top: 15px;
+}
+
+.view-completed-btn {
+    padding: 10px 20px;
+    font-size: 14px;
+    background-color: #666;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.view-completed-btn:hover {
+    background-color: #777;
+}
+
 
 #todoInput {
     flex: 1;
@@ -157,6 +191,48 @@ h1 {
 .priority-low {
     color: #44ff44;
 }
+
+.priority-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin-right: 5px;
+}
+
+.priority-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 5px;
+    background-color: #2a2a2a;
+    border: 1px solid #3a3a3a;
+    border-radius: 4px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    min-width: 120px;
+}
+
+.priority-option {
+    padding: 8px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.2s;
+}
+
+.priority-option:hover {
+    background-color: #3a3a3a;
+}
+
+.priority-option:first-child {
+    border-radius: 4px 4px 0 0;
+}
+
+.priority-option:last-child {
+    border-radius: 0 0 4px 4px;
+}
+
 
 .todo-item label {
     flex: 1;
@@ -344,4 +420,57 @@ h2 {
     width: 16px;
     height: 16px;
     cursor: pointer;
+}
+
+/* Completed View Styles */
+.completed-list {
+    list-style: none;
+    margin-top: 20px;
+}
+
+.completed-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px;
+    margin-bottom: 8px;
+    background-color: #2a2a2a;
+    border-radius: 4px;
+    border: 1px solid #3a3a3a;
+}
+
+.completed-item:hover {
+    background-color: #303030;
+}
+
+.completed-item label {
+    flex: 1;
+    color: #999;
+    text-decoration: line-through;
+}
+
+.completed-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.uncomplete-btn {
+    padding: 4px 10px;
+    font-size: 12px;
+    background-color: #4caf50;
+    color: #ffffff;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.uncomplete-btn:hover {
+    background-color: #45a049;
+}
+
+.empty-message {
+    padding: 20px;
+    text-align: center;
+    color: #666;
+    font-style: italic;
 }

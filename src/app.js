@@ -1,20 +1,30 @@
 let todos = [];
 let editingIndex = null;
-let currentView = 'list'; // 'list' or 'detail'
+let currentView = 'list'; // 'list', 'detail', or 'completed'
 let currentTodoIndex = null;
 
-// Load todos from localStorage on startup
-function loadTodos() {
-    const saved = localStorage.getItem('todos');
-    if (saved) {
-        todos = JSON.parse(saved);
+// Load todos from secure storage on startup
+async function loadTodos() {
+    try {
+        const loadedTodos = await window.electronAPI.loadTodos();
+        if (loadedTodos && Array.isArray(loadedTodos)) {
+            todos = loadedTodos;
+        }
+    } catch (error) {
+        console.error('Failed to load todos:', error);
+        // Continue with empty todos array
     }
     render();
 }
 
-// Save todos to localStorage
-function saveTodos() {
-    localStorage.setItem('todos', JSON.stringify(todos));
+// Save todos to secure storage
+async function saveTodos() {
+    try {
+        await window.electronAPI.saveTodos(todos);
+    } catch (error) {
+        console.error('Failed to save todos:', error);
+        // You might want to show an error message to the user here
+    }
 }
 
 // Main render function
@@ -23,6 +33,8 @@ function render() {
         renderListView();
     } else if (currentView === 'detail') {
         renderDetailView();
+    } else if (currentView === 'completed') {
+        renderCompletedView();
     }
 }
 
@@ -59,10 +71,9 @@ function renderListView() {
 
     const sortedTodos = getSortedTodos();
 
-    // Separate in-progress and regular todos
+    // Separate in-progress and regular todos (exclude completed from main view)
     const inProgressTodos = sortedTodos.filter(({ todo }) => todo.inProgress && !todo.completed);
     const regularTodos = sortedTodos.filter(({ todo }) => !todo.inProgress && !todo.completed);
-    const completedTodos = sortedTodos.filter(({ todo }) => todo.completed);
 
     // Render in-progress items
     inProgressTodos.forEach(({ todo, index }) => {
@@ -72,12 +83,6 @@ function renderListView() {
 
     // Render regular items
     regularTodos.forEach(({ todo, index }) => {
-        const li = createTodoElement(todo, index);
-        todoList.appendChild(li);
-    });
-
-    // Render completed items
-    completedTodos.forEach(({ todo, index }) => {
         const li = createTodoElement(todo, index);
         todoList.appendChild(li);
     });
@@ -133,9 +138,50 @@ function createTodoElement(todo, index) {
         setTimeout(() => editInput.focus(), 0);
     } else {
         // Normal mode
+        const priorityContainer = document.createElement('div');
+        priorityContainer.className = 'priority-container';
+
         const priorityIndicator = document.createElement('span');
         priorityIndicator.className = `priority-indicator priority-${todo.priority || 'medium'}`;
         priorityIndicator.textContent = '●';
+        priorityIndicator.style.cursor = 'pointer';
+
+        // Create dropdown menu
+        const dropdown = document.createElement('div');
+        dropdown.className = 'priority-dropdown';
+        dropdown.style.display = 'none';
+
+        // Create priority options
+        const priorities = [
+            { value: 'high', label: '🔴 High', color: 'priority-high' },
+            { value: 'medium', label: '🟡 Medium', color: 'priority-medium' },
+            { value: 'low', label: '🟢 Low', color: 'priority-low' }
+        ];
+
+        priorities.forEach(priority => {
+            const option = document.createElement('div');
+            option.className = 'priority-option';
+            option.innerHTML = `<span class="priority-indicator ${priority.color}">●</span> ${priority.value.charAt(0).toUpperCase() + priority.value.slice(1)}`;
+            option.addEventListener('click', (e) => {
+                e.stopPropagation();
+                changePriority(index, priority.value);
+                dropdown.style.display = 'none';
+            });
+            dropdown.appendChild(option);
+        });
+
+        // Toggle dropdown on priority indicator click
+        priorityIndicator.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // Close all other dropdowns
+            document.querySelectorAll('.priority-dropdown').forEach(d => {
+                if (d !== dropdown) d.style.display = 'none';
+            });
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        });
+
+        priorityContainer.appendChild(priorityIndicator);
+        priorityContainer.appendChild(dropdown);
 
         const label = document.createElement('label');
         label.textContent = todo.text;
@@ -155,7 +201,7 @@ function createTodoElement(todo, index) {
         deleteBtn.addEventListener('click', () => deleteTodo(index));
 
         li.appendChild(checkbox);
-        li.appendChild(priorityIndicator);
+        li.appendChild(priorityContainer);
         li.appendChild(label);
         li.appendChild(editBtn);
         li.appendChild(deleteBtn);
@@ -285,6 +331,70 @@ function backToList() {
     render();
 }
 
+// Render completed view
+function renderCompletedView() {
+    // Hide other views, show completed view
+    document.getElementById('listView').style.display = 'none';
+    document.getElementById('detailView').style.display = 'none';
+    document.getElementById('completedView').style.display = 'block';
+
+    const completedList = document.getElementById('completedList');
+    completedList.innerHTML = '';
+
+    const sortedTodos = getSortedTodos();
+    const completedTodos = sortedTodos.filter(({ todo }) => todo.completed);
+
+    if (completedTodos.length === 0) {
+        const emptyMessage = document.createElement('li');
+        emptyMessage.className = 'empty-message';
+        emptyMessage.textContent = 'No completed tasks yet';
+        completedList.appendChild(emptyMessage);
+        return;
+    }
+
+    completedTodos.forEach(({ todo, index }) => {
+        const li = document.createElement('li');
+        li.className = 'completed-item';
+
+        const label = document.createElement('label');
+        label.textContent = todo.text;
+
+        const buttonContainer = document.createElement('div');
+        buttonContainer.className = 'completed-buttons';
+
+        const uncompleteBtn = document.createElement('button');
+        uncompleteBtn.textContent = 'Uncomplete';
+        uncompleteBtn.className = 'uncomplete-btn';
+        uncompleteBtn.addEventListener('click', () => uncompleteTodo(index));
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.addEventListener('click', () => deleteTodo(index));
+
+        buttonContainer.appendChild(uncompleteBtn);
+        buttonContainer.appendChild(deleteBtn);
+
+        li.appendChild(label);
+        li.appendChild(buttonContainer);
+        completedList.appendChild(li);
+    });
+}
+
+// Open completed view
+function openCompletedView() {
+    currentView = 'completed';
+    render();
+}
+
+// Uncomplete a todo
+function uncompleteTodo(index) {
+    todos[index].completed = false;
+    saveTodos();
+    render();
+}
+
+
 // Drag and drop functionality
 let draggedIndex = null;
 
@@ -350,6 +460,21 @@ function toggleInProgress(index) {
     render();
 }
 
+// Change priority of a todo
+function changePriority(index, newPriority) {
+    todos[index].priority = newPriority;
+    saveTodos();
+    render();
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', () => {
+    document.querySelectorAll('.priority-dropdown').forEach(d => {
+        d.style.display = 'none';
+    });
+});
+
+
 // Event listeners
 document.getElementById('addBtn').addEventListener('click', addTodo);
 document.getElementById('todoInput').addEventListener('keypress', (e) => {
@@ -358,6 +483,9 @@ document.getElementById('todoInput').addEventListener('keypress', (e) => {
     }
 });
 document.getElementById('backBtn').addEventListener('click', backToList);
+document.getElementById('backBtnCompleted').addEventListener('click', backToList);
+document.getElementById('viewCompletedBtn').addEventListener('click', openCompletedView);
+
 
 // Load todos when page loads
 loadTodos();
