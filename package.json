@@ -1,0 +1,11 @@
+{
+  "name": "todo-app",
+  "version": "1.0.0",
+  "description": "A simple to-do desktop application",
+  "main": "main.js",
+  "author": "",
+  "license": "ISC",
+  "scripts": {
+    "start": "electron ."
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /Users/michaelwalter/Documents/2025/Github/To-do-app show HEAD:src/index.html)",
+      "Bash(git -C /Users/michaelwalter/Documents/2025/Github/To-do-app show HEAD:preload.js)",
+      "Bash(git -C /Users/michaelwalter/Documents/2025/Github/To-do-app show origin/main:package.json)",
+      "Bash(git -C /Users/michaelwalter/Documents/2025/Github/To-do-app show origin/main:main.js)",
+      "Bash(git -C /Users/michaelwalter/Documents/2025/Github/To-do-app show origin/main:src/app.js)",
+      "Bash(git -C /Users/michaelwalter/Documents/2025/Github/To-do-app show origin/main:src/index.html)",
+      "Bash(git -C /Users/michaelwalter/Documents/2025/Github/To-do-app show origin/main:preload.js)",
+      "Bash(git -C /Users/michaelwalter/Documents/2025/Github/To-do-app show origin/main:CLAUDE.MD)",
+      "Bash(git ls-tree:*)"
+    ]
+  }
+}
