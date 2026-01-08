@@ -88,6 +88,43 @@ function renderListView() {
     });
 }
 
+// Create mini progress bar for list view
+function createMiniProgressBar(currentStage) {
+    const miniBar = document.createElement('div');
+    miniBar.className = 'mini-progress-bar';
+
+    const currentStageIndex = stages.indexOf(currentStage);
+
+    stages.forEach((stage, index) => {
+        // Create dot
+        const dot = document.createElement('span');
+        dot.className = 'mini-stage-dot';
+
+        if (index === currentStageIndex) {
+            dot.classList.add('active');
+        } else if (index < currentStageIndex) {
+            dot.classList.add('completed');
+        }
+
+        // Add title for hover tooltip
+        dot.title = stage.charAt(0).toUpperCase() + stage.slice(1);
+
+        miniBar.appendChild(dot);
+
+        // Add connector between dots (except after last dot)
+        if (index < stages.length - 1) {
+            const connector = document.createElement('span');
+            connector.className = 'mini-stage-connector';
+            if (index < currentStageIndex) {
+                connector.classList.add('completed');
+            }
+            miniBar.appendChild(connector);
+        }
+    });
+
+    return miniBar;
+}
+
 // Create todo element
 function createTodoElement(todo, index) {
     const li = document.createElement('li');
@@ -98,6 +135,10 @@ function createTodoElement(todo, index) {
     // Drag events
     li.addEventListener('dragstart', handleDragStart);
     li.addEventListener('dragend', handleDragEnd);
+
+    // Create a wrapper for the main content (checkbox, priority, label, buttons)
+    const mainContent = document.createElement('div');
+    mainContent.className = 'todo-item-main';
 
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
@@ -129,10 +170,10 @@ function createTodoElement(todo, index) {
         cancelBtn.className = 'cancel-btn';
         cancelBtn.addEventListener('click', () => cancelEdit());
 
-        li.appendChild(checkbox);
-        li.appendChild(editInput);
-        li.appendChild(saveBtn);
-        li.appendChild(cancelBtn);
+        mainContent.appendChild(checkbox);
+        mainContent.appendChild(editInput);
+        mainContent.appendChild(saveBtn);
+        mainContent.appendChild(cancelBtn);
 
         // Auto-focus the input
         setTimeout(() => editInput.focus(), 0);
@@ -200,12 +241,19 @@ function createTodoElement(todo, index) {
         deleteBtn.className = 'delete-btn';
         deleteBtn.addEventListener('click', () => deleteTodo(index));
 
-        li.appendChild(checkbox);
-        li.appendChild(priorityContainer);
-        li.appendChild(label);
-        li.appendChild(editBtn);
-        li.appendChild(deleteBtn);
+        mainContent.appendChild(checkbox);
+        mainContent.appendChild(priorityContainer);
+        mainContent.appendChild(label);
+        mainContent.appendChild(editBtn);
+        mainContent.appendChild(deleteBtn);
     }
+
+    // Append main content to li
+    li.appendChild(mainContent);
+
+    // Create mini progress bar
+    const miniProgressBar = createMiniProgressBar(todo.stage || 'brainstorm');
+    li.appendChild(miniProgressBar);
 
     return li;
 }

@@ -94,14 +94,20 @@ h2 {
 /* Todo Items */
 .todo-item {
     display: flex;
-    align-items: center;
-    gap: 10px;
+    flex-direction: column;
+    gap: 8px;
     padding: 12px;
     background-color: #3a3a3a;
     border-radius: 5px;
     margin-bottom: 8px;
     transition: all 0.2s;
     cursor: move;
+}
+
+.todo-item-main {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .todo-item:last-child {
@@ -128,6 +134,51 @@ h2 {
 .todo-item.dragging {
     opacity: 0.5;
     transform: rotate(2deg);
+}
+
+/* Mini Progress Bar */
+.mini-progress-bar {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding-left: 30px;
+    margin-top: 4px;
+}
+
+.mini-stage-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: #2a2a2a;
+    border: 2px solid #555;
+    transition: all 0.2s ease;
+    cursor: help;
+}
+
+.mini-stage-dot:hover {
+    transform: scale(1.2);
+}
+
+.mini-stage-dot.active {
+    background-color: #4dd0e1;
+    border-color: #4dd0e1;
+    box-shadow: 0 0 8px rgba(77, 208, 225, 0.4);
+}
+
+.mini-stage-dot.completed {
+    background-color: #4dd0e1;
+    border-color: #4dd0e1;
+}
+
+.mini-stage-connector {
+    width: 20px;
+    height: 2px;
+    background-color: #555;
+    transition: all 0.2s ease;
+}
+
+.mini-stage-connector.completed {
+    background-color: #4dd0e1;
 }
 
 /* Checkboxes */
