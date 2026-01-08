@@ -225,7 +225,8 @@ function addTodo() {
         notes: '',
         priority: 'medium',
         createdAt: Date.now(),
-        inProgress: false
+        inProgress: false,
+        stage: 'brainstorm'
     });
 
     input.value = '';
@@ -315,6 +316,9 @@ function renderDetailView() {
         todos[currentTodoIndex].notes = notesInput.value;
         saveTodos();
     };
+
+    // Update progress bar
+    updateProgressBar(todo.stage || 'brainstorm');
 }
 
 // Open detail view for a todo
@@ -465,6 +469,49 @@ function changePriority(index, newPriority) {
     todos[index].priority = newPriority;
     saveTodos();
     render();
+}
+
+// Progress bar functionality
+const stages = ['brainstorm', 'planning', 'development', 'refinement', 'testing', 'done'];
+
+function updateProgressBar(currentStage) {
+    const stageItems = document.querySelectorAll('.stage-item');
+    const stageConnectors = document.querySelectorAll('.stage-connector');
+    const currentStageIndex = stages.indexOf(currentStage);
+
+    // Update each stage item
+    stageItems.forEach((item, index) => {
+        const stage = item.dataset.stage;
+        const stageIndex = stages.indexOf(stage);
+
+        // Remove all state classes first
+        item.classList.remove('active', 'completed');
+
+        if (stageIndex === currentStageIndex) {
+            item.classList.add('active');
+        } else if (stageIndex < currentStageIndex) {
+            item.classList.add('completed');
+        }
+
+        // Add click handler
+        item.onclick = () => changeStage(stage);
+    });
+
+    // Update connectors
+    stageConnectors.forEach((connector, index) => {
+        connector.classList.remove('completed');
+        if (index < currentStageIndex) {
+            connector.classList.add('completed');
+        }
+    });
+}
+
+function changeStage(newStage) {
+    if (currentTodoIndex !== null) {
+        todos[currentTodoIndex].stage = newStage;
+        saveTodos();
+        updateProgressBar(newStage);
+    }
 }
 
 // Close dropdowns when clicking outside
