@@ -33,20 +33,18 @@ export function TodoItem({ todo, onToggle, onDelete, onUpdate, onOpenDetail }: T
       onDragStart={() => setIsDragging(true)}
       onDragEnd={() => setIsDragging(false)}
       onClick={() => onOpenDetail(todo.id)}
-      className={`bg-[#ffffff] border border-[#d0d0d0] rounded-md p-4 flex items-center gap-4 group hover:bg-[#f8f8f8] hover:border-[#b0b0b0] transition-all duration-200 cursor-pointer ${
-        isDragging ? 'opacity-50 rotate-2' : ''
-      }`}
+      className={`bg-[#ffffff] border border-[#d0d0d0] rounded-md p-4 flex items-center gap-4 group hover:bg-[#f8f8f8] hover:border-[#b0b0b0] transition-all duration-200 cursor-pointer ${isDragging ? 'opacity-50 rotate-2' : ''
+        }`}
     >
       <button
         onClick={(e) => {
           e.stopPropagation();
           onToggle(todo.id);
         }}
-        className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-          todo.completed
+        className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${todo.completed
             ? 'bg-[#a0a0a0] border-[#a0a0a0]'
             : 'bg-transparent border-[#c0c0c0] hover:border-[#808080]'
-        }`}
+          }`}
       >
         {todo.completed && <Check size={14} className="text-white" />}
       </button>
@@ -60,21 +58,19 @@ export function TodoItem({ todo, onToggle, onDelete, onUpdate, onOpenDetail }: T
 
       <div className="flex-1 min-w-0">
         <span
-          className={`block truncate transition-all ${
-            todo.completed ? 'text-[#a0a0a0] line-through' : 'text-[#404040]'
-          }`}
+          className={`block truncate transition-all ${todo.completed ? 'text-[#a0a0a0] line-through' : 'text-[#404040]'
+            }`}
         >
           {todo.text}
         </span>
-        
+
         {/* Mini Progress Bar */}
         <div className="flex gap-1 mt-2">
           {[0, 1, 2, 3, 4].map((stage) => (
             <div
               key={stage}
-              className={`w-2 h-2 rounded-full ${
-                stage <= stageProgress[todo.stage] ? 'bg-[#909090]' : 'bg-[#d8d8d8]'
-              }`}
+              className={`w-2 h-2 rounded-full ${stage <= stageProgress[todo.stage] ? 'bg-[#909090]' : 'bg-[#d8d8d8]'
+                }`}
             />
           ))}
         </div>

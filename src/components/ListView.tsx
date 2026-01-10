@@ -14,7 +14,7 @@ interface ListViewProps {
   onOpenDetail: (id: string) => void;
   onViewCompleted: () => void;
   onExport: () => void;
-  onImport: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onImport: () => void;
 }
 
 export function ListView({

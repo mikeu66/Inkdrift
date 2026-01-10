@@ -8,11 +8,37 @@ const getStoragePath = () => {
     return path.join(userDataPath, 'todos.json');
 };
 
+// Migrate old stage names to new ones
+function migrateTodos(todos) {
+    const stageMapping = {
+        'brainstorm': 'not-started',
+        'planning': 'planning',
+        'development': 'in-progress',
+        'refinement': 'review',
+        'testing': 'review',
+        'done': 'done'
+    };
+
+    return todos.map(todo => {
+        if (todo.stage && stageMapping[todo.stage]) {
+            return { ...todo, stage: stageMapping[todo.stage] };
+        }
+        // If stage is missing, set default
+        if (!todo.stage) {
+            return { ...todo, stage: 'not-started' };
+        }
+        return todo;
+    });
+}
+
 // Validate todos data structure
 function validateTodos(todos) {
     if (!Array.isArray(todos)) {
         throw new Error('Invalid data: todos must be an array');
     }
+
+    const validPriorities = ['high', 'medium', 'low'];
+    const validStages = ['not-started', 'planning', 'in-progress', 'review', 'done'];
 
     // Validate each todo item
     todos.forEach((todo, index) => {
@@ -38,6 +64,21 @@ function validateTodos(todos) {
         }
         if (todo.notes && todo.notes.length > 50000) {
             throw new Error(`Invalid todo at index ${index}: notes too long (max 50000 chars)`);
+        }
+
+        // Validate priority if present
+        if (todo.priority && !validPriorities.includes(todo.priority)) {
+            throw new Error(`Invalid todo at index ${index}: priority must be one of ${validPriorities.join(', ')}`);
+        }
+
+        // Validate stage if present
+        if (todo.stage && !validStages.includes(todo.stage)) {
+            throw new Error(`Invalid todo at index ${index}: stage must be one of ${validStages.join(', ')}`);
+        }
+
+        // Validate inProgress if present
+        if (todo.inProgress !== undefined && typeof todo.inProgress !== 'boolean') {
+            throw new Error(`Invalid todo at index ${index}: inProgress must be a boolean`);
         }
     });
 
@@ -81,7 +122,10 @@ function setupIpcHandlers() {
             }
 
             const data = fs.readFileSync(storagePath, 'utf8');
-            const todos = JSON.parse(data);
+            let todos = JSON.parse(data);
+
+            // Migrate old stage names to new ones
+            todos = migrateTodos(todos);
 
             // Validate loaded data
             validateTodos(todos);
@@ -181,6 +225,9 @@ function setupIpcHandlers() {
                 throw new Error('Invalid file format: expected todo array or export metadata object');
             }
 
+            // Migrate old stage names to new ones
+            todos = migrateTodos(todos);
+
             // Validate todos structure
             validateTodos(todos);
 
@@ -208,8 +255,8 @@ function setupIpcHandlers() {
 
 function createWindow() {
     const win = new BrowserWindow({
-        width: 800,
-        height: 600,
+        width: 1000,
+        height: 700,
         icon: path.join(__dirname, 'logo.png'),
         webPreferences: {
             // SECURITY: Disable direct Node.js access from renderer
@@ -225,14 +272,16 @@ function createWindow() {
             // SECURITY: Disable insecure content
             allowRunningInsecureContent: false
         },
-        backgroundColor: '#1a1a1a'
+        backgroundColor: '#e8e8e8'
     });
 
-    win.loadFile(path.join(__dirname, 'index.html'));
-
-    // Only enable DevTools in development mode
+    // In development, load from Vite dev server
+    // In production, load from built files
     if (process.env.NODE_ENV === 'development') {
+        win.loadURL('http://localhost:3000');
         win.webContents.openDevTools();
+    } else {
+        win.loadFile(path.join(__dirname, 'dist', 'index.html'));
     }
 }
 
