@@ -8,7 +8,7 @@ const getStoragePath = () => {
     return path.join(userDataPath, 'todos.json');
 };
 
-// Migrate old stage names to new ones
+// Migrate old stage names to new ones and ensure all fields have defaults
 function migrateTodos(todos) {
     const stageMapping = {
         'brainstorm': 'not-started',
@@ -20,14 +20,35 @@ function migrateTodos(todos) {
     };
 
     return todos.map(todo => {
-        if (todo.stage && stageMapping[todo.stage]) {
-            return { ...todo, stage: stageMapping[todo.stage] };
+        // Start with the original todo
+        const migratedTodo = { ...todo };
+
+        // Migrate stage if it's an old name
+        if (migratedTodo.stage && stageMapping[migratedTodo.stage]) {
+            migratedTodo.stage = stageMapping[migratedTodo.stage];
         }
-        // If stage is missing, set default
-        if (!todo.stage) {
-            return { ...todo, stage: 'not-started' };
+
+        // Ensure all required fields have defaults if missing
+        if (!migratedTodo.stage) {
+            migratedTodo.stage = 'not-started';
         }
-        return todo;
+        if (!migratedTodo.priority) {
+            migratedTodo.priority = 'medium';
+        }
+        if (migratedTodo.inProgress === undefined) {
+            migratedTodo.inProgress = false;
+        }
+        if (migratedTodo.notes === undefined) {
+            migratedTodo.notes = '';
+        }
+        if (!migratedTodo.id) {
+            migratedTodo.id = Date.now().toString() + '-' + Math.random().toString(36).substr(2, 9);
+        }
+        if (!migratedTodo.createdAt) {
+            migratedTodo.createdAt = Date.now();
+        }
+
+        return migratedTodo;
     });
 }
 
