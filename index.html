@@ -1,15 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
 
-  <!DOCTYPE html>
-  <html lang="en">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Minimalist Todo App</title>
-    </head>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-Do App</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
 
-    <body>
-      <div id="root"></div>
-      <script type="module" src="/src/main.tsx"></script>
-    </body>
-  </html>
-  
+<body>
+    <div class="container">
+        <!-- List View -->
+        <div id="listView" class="view">
+            <div class="header">
+                <h1>Tasks</h1>
+                <button id="themeToggle" class="theme-toggle" title="Toggle theme">🌙</button>
+            </div>
+
+            <div class="section-header in-progress-header">In Progress</div>
+            <ul id="inProgressList" class="todo-list in-progress-section">
+                <!-- In-progress items will be added here -->
+            </ul>
+
+            <div class="section-header todo-header">To Do</div>
+            <ul id="todoList" class="todo-list">
+                <!-- To-do items will be added here -->
+            </ul>
+
+            <div class="input-section">
+                <input type="text" id="todoInput" placeholder="Add a new task..." />
+                <button id="addBtn">Add</button>
+            </div>
+
+            <div class="nav-buttons">
+                <button id="viewCompletedBtn" class="nav-btn">Completed</button>
+            </div>
+
+            <div class="export-import-section">
+                <button id="exportBtn" class="export-btn">Export Tasks</button>
+                <button id="importBtn" class="import-btn">Import Tasks</button>
+            </div>
+
+            <button id="trashIconBtn" class="trash-icon-btn" title="Go to Trash">🗑️</button>
+        </div>
+
+        <!-- Detail View -->
+        <div id="detailView" class="view" style="display: none;">
+            <div class="detail-header">
+                <button id="backBtn" class="back-btn">← Back</button>
+                <h2 id="detailTitle"></h2>
+            </div>
+
+            <div class="progress-bar-section">
+                <label>Stage:</label>
+                <div class="progress-bar-container">
+                    <div class="progress-stages">
+                        <div class="stage-item" data-stage="brainstorm">
+                            <div class="stage-circle"></div>
+                            <div class="stage-label">Brainstorm</div>
+                        </div>
+                        <div class="stage-connector"></div>
+                        <div class="stage-item" data-stage="planning">
+                            <div class="stage-circle"></div>
+                            <div class="stage-label">Planning</div>
+                        </div>
+                        <div class="stage-connector"></div>
+                        <div class="stage-item" data-stage="development">
+                            <div class="stage-circle"></div>
+                            <div class="stage-label">Development</div>
+                        </div>
+                        <div class="stage-connector"></div>
+                        <div class="stage-item" data-stage="refinement">
+                            <div class="stage-circle"></div>
+                            <div class="stage-label">Refinement</div>
+                        </div>
+                        <div class="stage-connector"></div>
+                        <div class="stage-item" data-stage="testing">
+                            <div class="stage-circle"></div>
+                            <div class="stage-label">Testing</div>
+                        </div>
+                        <div class="stage-connector"></div>
+                        <div class="stage-item" data-stage="done">
+                            <div class="stage-circle"></div>
+                            <div class="stage-label">Done</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-content">
+                <div class="priority-section">
+                    <label for="prioritySelect">Priority:</label>
+                    <select id="prioritySelect" class="priority-select">
+                        <option value="high">High</option>
+                        <option value="medium">Medium</option>
+                        <option value="low">Low</option>
+                    </select>
+                </div>
+
+                <div class="in-progress-section-detail">
+                    <label>
+                        <input type="checkbox" id="inProgressCheckbox" class="in-progress-checkbox" />
+                        Mark as In Progress
+                    </label>
+                </div>
+
+                <label for="notesInput">Notes:</label>
+                <textarea id="notesInput" class="notes-input" placeholder="Add your planning notes here..." maxlength="50000"></textarea>
+                <div class="char-count">
+                    <span id="charCount">0</span> / 50000 characters
+                </div>
+            </div>
+        </div>
+
+        <!-- Completed View -->
+        <div id="completedView" class="view" style="display: none;">
+            <div class="detail-header">
+                <button id="backBtnCompleted" class="back-btn">← Back</button>
+                <h2>Completed Tasks</h2>
+            </div>
+
+            <ul id="completedList" class="completed-list">
+                <!-- Completed items will be added here -->
+            </ul>
+
+            <div class="empty-state" id="completedEmptyState">
+                <p>No completed tasks yet.</p>
+            </div>
+        </div>
+
+        <!-- Trash View (NEW) -->
+        <div id="trashView" class="view" style="display: none;">
+            <div class="detail-header">
+                <button id="backBtnTrash" class="back-btn">← Back</button>
+                <h2>Trash</h2>
+                <button id="emptyTrashBtn" class="empty-trash-btn">Empty Trash</button>
+            </div>
+
+            <div class="trash-info">
+                <p>Items are automatically deleted after 30 days</p>
+            </div>
+
+            <ul id="trashList" class="trash-list">
+                <!-- Deleted items will be added here -->
+            </ul>
+
+            <div class="empty-state" id="trashEmptyState">
+                <p>Trash is empty.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
