@@ -355,6 +355,7 @@ function addTodo() {
         id: generateUUID(),
         text: text,
         notes: '',
+        subtasks: [],
         completed: false,
         inProgress: false,
         priority: 'medium',
@@ -482,6 +483,9 @@ function renderDetailView() {
 
     // Stage progress
     renderStageProgress(todo.stage || 'brainstorm');
+
+    // Subtasks
+    renderSubtasks();
 }
 
 function renderStageProgress(currentStage) {
@@ -510,6 +514,187 @@ function updateCharCount() {
     const notesInput = document.getElementById('notesInput');
     const charCount = document.getElementById('charCount');
     charCount.textContent = notesInput.value.length;
+}
+
+// ===================================
+// SUBTASKS MANAGEMENT
+// ===================================
+function renderSubtasks() {
+    const todo = findTodoById(appState.currentTodoId);
+    if (!todo) return;
+
+    const subtasksList = document.getElementById('subtasksList');
+    subtasksList.innerHTML = '';
+
+    // Ensure subtasks array exists
+    if (!todo.subtasks) {
+        todo.subtasks = [];
+    }
+
+    if (todo.subtasks.length === 0) {
+        const emptyMsg = document.createElement('li');
+        emptyMsg.className = 'subtask-empty';
+        emptyMsg.textContent = 'No subtasks yet';
+        subtasksList.appendChild(emptyMsg);
+        return;
+    }
+
+    todo.subtasks.forEach((subtask, index) => {
+        const li = createSubtaskElement(subtask, index);
+        subtasksList.appendChild(li);
+    });
+}
+
+function createSubtaskElement(subtask, index) {
+    const li = document.createElement('li');
+    li.className = `subtask-item ${subtask.completed ? 'completed' : ''}`;
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = subtask.completed;
+    checkbox.className = 'subtask-checkbox';
+    checkbox.addEventListener('change', () => toggleSubtask(index));
+
+    const text = document.createElement('span');
+    text.className = 'subtask-text';
+    text.textContent = subtask.text;
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'subtask-delete-btn';
+    deleteBtn.textContent = '×';
+    deleteBtn.title = 'Delete subtask';
+    deleteBtn.addEventListener('click', () => deleteSubtask(index));
+
+    li.appendChild(checkbox);
+    li.appendChild(text);
+    li.appendChild(deleteBtn);
+
+    return li;
+}
+
+function addSubtask() {
+    const todo = findTodoById(appState.currentTodoId);
+    if (!todo) return;
+
+    const input = document.getElementById('subtaskInput');
+    const text = input.value.trim();
+
+    if (!text) {
+        showToast('Subtask cannot be empty', 'error');
+        return;
+    }
+
+    if (text.length > 500) {
+        showToast('Subtask too long (max 500 chars)', 'error');
+        return;
+    }
+
+    if (!todo.subtasks) {
+        todo.subtasks = [];
+    }
+
+    const newSubtask = {
+        id: generateUUID(),
+        text: text,
+        completed: false,
+        createdAt: Date.now()
+    };
+
+    todo.subtasks.push(newSubtask);
+    input.value = '';
+    saveTodos();
+    renderSubtasks();
+    showToast('Subtask added', 'success');
+}
+
+function toggleSubtask(index) {
+    const todo = findTodoById(appState.currentTodoId);
+    if (!todo || !todo.subtasks || !todo.subtasks[index]) return;
+
+    todo.subtasks[index].completed = !todo.subtasks[index].completed;
+    saveTodos();
+    renderSubtasks();
+}
+
+function deleteSubtask(index) {
+    const todo = findTodoById(appState.currentTodoId);
+    if (!todo || !todo.subtasks) return;
+
+    todo.subtasks.splice(index, 1);
+    saveTodos();
+    renderSubtasks();
+    showToast('Subtask deleted', 'info');
+}
+
+// ===================================
+// AI MARKDOWN EXPORT
+// ===================================
+function exportToMarkdown() {
+    const todo = findTodoById(appState.currentTodoId);
+    if (!todo) return;
+
+    const stageName = (todo.stage || 'brainstorm').charAt(0).toUpperCase() + (todo.stage || 'brainstorm').slice(1);
+    const priorityEmoji = { high: '🔴', medium: '🟡', low: '🟢' };
+
+    let markdown = `# ${todo.text}\n\n`;
+    markdown += `**Priority:** ${priorityEmoji[todo.priority] || '🟡'} ${(todo.priority || 'medium').toUpperCase()}\n`;
+    markdown += `**Stage:** ${stageName}\n`;
+    markdown += `**Status:** ${todo.inProgress ? '🔄 In Progress' : todo.completed ? '✅ Completed' : '📝 To Do'}\n`;
+    markdown += `**Created:** ${new Date(todo.createdAt).toLocaleDateString()}\n\n`;
+
+    // Subtasks
+    if (todo.subtasks && todo.subtasks.length > 0) {
+        markdown += `## Subtasks\n\n`;
+        todo.subtasks.forEach(subtask => {
+            const checkbox = subtask.completed ? '[x]' : '[ ]';
+            markdown += `- ${checkbox} ${subtask.text}\n`;
+        });
+        markdown += `\n`;
+    }
+
+    // Notes
+    if (todo.notes && todo.notes.trim()) {
+        markdown += `## Notes\n\n${todo.notes}\n\n`;
+    }
+
+    // Add AI context section
+    markdown += `---\n\n`;
+    markdown += `## AI Context\n\n`;
+    markdown += `This task is part of a project management workflow. `;
+    markdown += `The task is currently in the **${stageName}** stage. `;
+
+    if (todo.subtasks && todo.subtasks.length > 0) {
+        const completedCount = todo.subtasks.filter(s => s.completed).length;
+        const totalCount = todo.subtasks.length;
+        markdown += `Progress: ${completedCount}/${totalCount} subtasks completed. `;
+    }
+
+    markdown += `\n\nFeel free to ask questions or provide suggestions related to this task.\n`;
+
+    // Copy to clipboard
+    copyToClipboard(markdown);
+    showToast('Markdown copied to clipboard!', 'success');
+}
+
+async function copyToClipboard(text) {
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(text);
+        } else {
+            // Fallback for older browsers
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+        }
+    } catch (err) {
+        console.error('Failed to copy to clipboard:', err);
+        showToast('Failed to copy to clipboard', 'error');
+    }
 }
 
 // ===================================
@@ -743,6 +928,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
     });
+
+    // Subtasks
+    document.getElementById('addSubtaskBtn').addEventListener('click', addSubtask);
+    document.getElementById('subtaskInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') addSubtask();
+    });
+
+    // AI Markdown Export
+    document.getElementById('exportMarkdownBtn').addEventListener('click', exportToMarkdown);
 
     // Completed View
     document.getElementById('backBtnCompleted').addEventListener('click', () => navigateToView('list'));

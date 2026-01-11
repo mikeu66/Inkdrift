@@ -72,22 +72,22 @@
     /* Core Palette - Light Mode */
     --deep-navy: #1D3A6D;
     --crimson-accent: #9B1F32;
-    --platinum-grey: #6B7280;
+    --platinum-grey: #475569;
 
     /* Surfaces & Layout - Clean & Elevated */
-    --bg-primary: #F5F7FA;
-    --bg-secondary: #FFFFFF;
-    --bg-tertiary: #E1E8F0;
-    --bg-hover: #E1E8F0;
-    --bg-input: #FFFFFF;
-    --bg-in-progress: #E1F0FF;
+    --bg-primary: #C8D4E1;
+    --bg-secondary: #D0DAEA;
+    --bg-tertiary: #B8C7D8;
+    --bg-hover: #B0C0D2;
+    --bg-input: #D5DEE9;
+    --bg-in-progress: #B8D0E8;
     --bg-in-progress-border: #4F7FFF;
-    --bg-active: #D1E3F8;
+    --bg-active: #A8BFDB;
 
     /* Typography - High Contrast for Readability */
     --text-primary: #0F172A;
     --text-secondary: #475569;
-    --text-muted: #6B7280;
+    --text-muted: #475569;
     --text-white: #0F172A;
 
     /* Accent System - Deep Blue & AI Red */
@@ -104,16 +104,16 @@
     /* Stage Colors - Blue for Active, Green for Success */
     --stage-active: #4F7FFF;
     --stage-completed: #1F7A6B;
-    --stage-inactive: #6B7280;
+    --stage-inactive: #475569;
 
-    /* Border Colors - Subtle & Clean */
-    --border-default: #E1E8F0;
+    /* Border Colors - Minimal borders with elevation */
+    --border-default: rgba(29, 58, 109, 0.06);
     --border-focus: #4F7FFF;
 
-    /* Shadows - Soft & Premium */
-    --shadow-sm: 0 4px 12px rgba(15, 23, 42, 0.08);
-    --shadow-md: 0 6px 16px rgba(15, 23, 42, 0.12);
-    --shadow-lg: 0 10px 24px rgba(15, 23, 42, 0.16);
+    /* Shadows - Elevation instead of borders */
+    --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04);
+    --shadow-md: 0 4px 16px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.06);
+    --shadow-lg: 0 8px 24px rgba(15, 23, 42, 0.10), 0 4px 12px rgba(15, 23, 42, 0.08);
 }
 
 /* ===================================
@@ -121,49 +121,61 @@
    =================================== */
 [data-theme="light"] body {
     background: linear-gradient(135deg,
-        #F5F7FA 0%,
-        #E8EDF5 25%,
-        #F0F4F9 50%,
-        #E8EDF5 75%,
-        #F5F7FA 100%);
+            #C8D4E1 0%,
+            #B8C7D8 25%,
+            #C8D4E1 50%,
+            #B8C7D8 75%,
+            #C8D4E1 100%);
     background-size: 400% 400%;
 }
 
 [data-theme="light"] .container {
-    background: rgba(255, 255, 255, 0.8);
+    background: rgba(208, 218, 234, 0.85);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(29, 58, 109, 0.08);
-    box-shadow: 0 10px 40px rgba(15, 23, 42, 0.12),
-                0 0 0 1px rgba(255, 255, 255, 0.9) inset;
+    border: none;
+    box-shadow: 0 12px 48px rgba(15, 23, 42, 0.15),
+        0 4px 20px rgba(15, 23, 42, 0.10);
+}
+
+[data-theme="light"] h1 {
+    background: linear-gradient(90deg,
+        #1D3A6D 0%,
+        #4F7FFF 25%,
+        #6B95FF 50%,
+        #4F7FFF 75%,
+        #1D3A6D 100%);
+    background-size: 200% 100%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
 [data-theme="light"] .theme-toggle,
 [data-theme="light"] .trash-icon-btn {
-    background: rgba(255, 255, 255, 0.8);
+    background: rgba(213, 222, 233, 0.95);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 2px solid rgba(29, 58, 109, 0.1);
-    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08),
-                0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+    border: none;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12),
+        0 2px 6px rgba(15, 23, 42, 0.08);
 }
 
 [data-theme="light"] .theme-toggle:hover,
 [data-theme="light"] .trash-icon-btn:hover {
-    background: rgba(255, 255, 255, 0.95);
-    border-color: var(--accent-primary);
-    box-shadow: 0 0 20px rgba(79, 127, 255, 0.3),
-                0 6px 16px rgba(15, 23, 42, 0.12),
-                0 0 0 1px rgba(79, 127, 255, 0.2) inset;
+    background: rgba(184, 199, 216, 1);
+    box-shadow: 0 0 24px rgba(79, 127, 255, 0.35),
+        0 8px 20px rgba(15, 23, 42, 0.16),
+        0 4px 10px rgba(15, 23, 42, 0.12);
 }
 
 [data-theme="light"] .toast {
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(208, 218, 234, 0.95);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(29, 58, 109, 0.1);
-    box-shadow: 0 8px 32px rgba(15, 23, 42, 0.16),
-                0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+    border: none;
+    box-shadow: 0 8px 32px rgba(15, 23, 42, 0.18),
+        0 4px 16px rgba(15, 23, 42, 0.14);
 }
 
 /* Subtle Gradients on Lists */
@@ -171,41 +183,55 @@
 [data-theme="light"] .completed-list,
 [data-theme="light"] .trash-list,
 [data-theme="light"] .progress-bar-container {
-    background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFB 100%);
+    background: linear-gradient(180deg, #D5DEE9 0%, #D0DAEA 100%);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(29, 58, 109, 0.08);
-    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08),
-                0 0 0 1px rgba(255, 255, 255, 0.9) inset;
+    border: none;
+    box-shadow: 0 3px 12px rgba(15, 23, 42, 0.10),
+        0 1px 5px rgba(15, 23, 42, 0.07);
 }
 
 /* Subtle Gradients on Todo Items */
 [data-theme="light"] .todo-item,
 [data-theme="light"] .completed-item,
 [data-theme="light"] .trash-item {
-    background: linear-gradient(180deg, #FFFFFF 0%, #F9FAFB 100%);
-    border: 1px solid rgba(29, 58, 109, 0.08);
-    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06),
-                0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+    background: linear-gradient(135deg, #D5DEE9 0%, #D0DAEA 100%);
+    border: none;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.09),
+        0 1px 4px rgba(15, 23, 42, 0.06);
 }
 
 [data-theme="light"] .todo-item:hover,
 [data-theme="light"] .completed-item:hover,
 [data-theme="light"] .trash-item:hover {
-    background: linear-gradient(180deg, #FFFFFF 0%, #F5F7FA 100%);
-    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.12),
-                0 0 0 1px rgba(79, 127, 255, 0.15) inset;
-    border-color: rgba(79, 127, 255, 0.2);
+    background: linear-gradient(135deg, #B8C7D8 0%, #B0C0D2 100%);
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.14),
+        0 3px 10px rgba(15, 23, 42, 0.10);
 }
 
 /* In-Progress Item with Blue Gradient */
 [data-theme="light"] .in-progress-item {
-    background: linear-gradient(180deg, #FFFFFF 0%, #E1F0FF 100%);
-    border: 1px solid rgba(79, 127, 255, 0.2);
+    background: linear-gradient(135deg, #B8D0E8 0%, #A8C4DD 100%);
+    border: none;
     border-left: 3px solid #4F7FFF;
-    box-shadow: -3px 0 15px rgba(79, 127, 255, 0.2),
-                0 4px 12px rgba(15, 23, 42, 0.08),
-                0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+    box-shadow: -3px 0 18px rgba(79, 127, 255, 0.30),
+        0 4px 16px rgba(15, 23, 42, 0.14),
+        0 2px 8px rgba(15, 23, 42, 0.10);
+}
+
+/* Navigation Buttons */
+[data-theme="light"] .nav-btn {
+    background: linear-gradient(135deg, #D0DAEA 0%, #C8D4E1 100%);
+    border: none;
+    color: var(--text-secondary);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.10),
+        0 1px 3px rgba(15, 23, 42, 0.07);
+}
+
+[data-theme="light"] .nav-btn:hover {
+    background: linear-gradient(135deg, #B8C7D8 0%, #B0C0D2 100%);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.14),
+        0 2px 6px rgba(15, 23, 42, 0.10);
 }
 
 /* Active Navigation Button with Gradient */
@@ -213,7 +239,9 @@
     background: linear-gradient(135deg, #4F7FFF, #6B95FF, #4F7FFF);
     background-size: 200% 200%;
     color: #FFFFFF;
-    box-shadow: 0 0 15px rgba(79, 127, 255, 0.3), 0 4px 8px rgba(15, 23, 42, 0.1);
+    box-shadow: 0 0 20px rgba(79, 127, 255, 0.30),
+        0 4px 12px rgba(15, 23, 42, 0.10),
+        0 2px 6px rgba(15, 23, 42, 0.06);
 }
 
 /* Add Button with Gradient */
@@ -224,22 +252,88 @@
 }
 
 [data-theme="light"] #addBtn:hover {
-    box-shadow: 0 0 20px rgba(79, 127, 255, 0.4), 0 4px 12px rgba(15, 23, 42, 0.12);
+    box-shadow: 0 0 24px rgba(79, 127, 255, 0.35),
+        0 6px 16px rgba(15, 23, 42, 0.12),
+        0 3px 8px rgba(15, 23, 42, 0.08);
 }
 
 /* In-Progress Section with Gradient */
 [data-theme="light"] .in-progress-section {
     background: linear-gradient(135deg,
-        rgba(225, 240, 255, 0.4) 0%,
-        rgba(209, 227, 248, 0.4) 50%,
-        rgba(225, 240, 255, 0.4) 100%);
+            rgba(184, 208, 232, 0.8) 0%,
+            rgba(168, 196, 221, 0.8) 50%,
+            rgba(184, 208, 232, 0.8) 100%);
     background-size: 400% 400%;
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    border: 2px solid var(--bg-in-progress-border);
-    box-shadow: 0 0 30px rgba(79, 127, 255, 0.15),
-                0 4px 16px rgba(15, 23, 42, 0.08),
-                0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+    border: none;
+    box-shadow: 0 0 36px rgba(79, 127, 255, 0.26),
+        0 6px 24px rgba(15, 23, 42, 0.14),
+        0 3px 12px rgba(15, 23, 42, 0.10);
+}
+
+/* Input Fields */
+[data-theme="light"] #todoInput,
+[data-theme="light"] .notes-input,
+[data-theme="light"] .priority-select {
+    background: linear-gradient(135deg, #D5DEE9 0%, #D0DAEA 100%);
+    border: none;
+    color: var(--text-primary);
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.09) inset,
+        0 1px 4px rgba(15, 23, 42, 0.06);
+}
+
+[data-theme="light"] #todoInput:focus,
+[data-theme="light"] .notes-input:focus,
+[data-theme="light"] .priority-select:focus {
+    background: linear-gradient(135deg, #B8C7D8 0%, #B0C0D2 100%);
+    box-shadow: 0 0 0 3px rgba(79, 127, 255, 0.20),
+        0 3px 12px rgba(15, 23, 42, 0.12) inset,
+        0 2px 6px rgba(15, 23, 42, 0.10);
+}
+
+/* Back Buttons & Secondary Buttons */
+[data-theme="light"] .back-btn,
+[data-theme="light"] .export-btn,
+[data-theme="light"] .import-btn {
+    background: linear-gradient(135deg, #D0DAEA 0%, #C8D4E1 100%);
+    border: none;
+    color: var(--text-primary);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.10),
+        0 1px 3px rgba(15, 23, 42, 0.07);
+}
+
+[data-theme="light"] .back-btn:hover,
+[data-theme="light"] .export-btn:hover,
+[data-theme="light"] .import-btn:hover {
+    background: linear-gradient(135deg, #B8C7D8 0%, #B0C0D2 100%);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.14),
+        0 2px 6px rgba(15, 23, 42, 0.10);
+}
+
+/* Action Buttons */
+[data-theme="light"] .action-btn {
+    background: linear-gradient(135deg, #D5DEE9 0%, #D0DAEA 100%);
+    border: none;
+    color: var(--text-secondary);
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08),
+        0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+[data-theme="light"] .action-btn:hover {
+    background: linear-gradient(135deg, #B8C7D8 0%, #B0C0D2 100%);
+    color: var(--text-primary);
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.12),
+        0 2px 5px rgba(15, 23, 42, 0.08);
+}
+
+/* Empty States & Info Boxes */
+[data-theme="light"] .empty-state,
+[data-theme="light"] .trash-info {
+    background: linear-gradient(135deg, #C0CFDD 0%, #B8C7D8 100%);
+    border: none;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.10),
+        0 1px 4px rgba(15, 23, 42, 0.07);
 }
 
 /* ===================================
@@ -254,11 +348,11 @@
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     background: linear-gradient(135deg,
-        #070E1A 0%,
-        #0A1628 25%,
-        #050B15 50%,
-        #0A1628 75%,
-        #070E1A 100%);
+            #070E1A 0%,
+            #0A1628 25%,
+            #050B15 50%,
+            #0A1628 75%,
+            #070E1A 100%);
     background-size: 400% 400%;
     animation: gradientShift 20s ease infinite;
     color: var(--text-primary);
@@ -280,8 +374,8 @@ body {
     border-radius: var(--radius-md);
     padding: var(--space-xl);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
-                0 0 0 1px rgba(255, 255, 255, 0.05) inset,
-                0 0 60px rgba(43, 111, 255, 0.1);
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+        0 0 60px rgba(43, 111, 255, 0.1);
 }
 
 .view {
@@ -289,8 +383,13 @@ body {
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 /* Premium Gradient Animations */
@@ -298,18 +397,23 @@ body {
     0% {
         background-position: 0% 50%;
     }
+
     50% {
         background-position: 100% 50%;
     }
+
     100% {
         background-position: 0% 50%;
     }
 }
 
 @keyframes borderGlow {
-    0%, 100% {
+
+    0%,
+    100% {
         opacity: 0.6;
     }
+
     50% {
         opacity: 1;
     }
@@ -334,8 +438,19 @@ body {
 }
 
 h1 {
-    font-size: 28px;
-    color: var(--text-white);
+    font-size: 32px;
+    font-weight: 700;
+    background: linear-gradient(90deg,
+        #F8FAFC 0%,
+        #2B6FFF 25%,
+        #4D8FFF 50%,
+        #2B6FFF 75%,
+        #F8FAFC 100%);
+    background-size: 200% 100%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradientShift 8s ease infinite;
     margin: 0;
     flex: 1;
     text-align: center;
@@ -349,7 +464,7 @@ h1 {
     background: rgba(20, 41, 74, 0.5);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    border: 2px solid rgba(255, 255, 255, 0.1);
+    border: none;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -358,16 +473,15 @@ h1 {
     transition: all var(--transition-normal);
     flex-shrink: 0;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2),
-                0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+        0 0 0 1px rgba(255, 255, 255, 0.03) inset;
 }
 
 .theme-toggle:hover {
     background: rgba(20, 41, 74, 0.7);
-    border-color: var(--accent-primary);
     transform: rotate(20deg);
     box-shadow: 0 0 20px rgba(43, 111, 255, 0.4),
-                0 4px 12px rgba(0, 0, 0, 0.3),
-                0 0 0 1px rgba(43, 111, 255, 0.2) inset;
+        0 4px 12px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(43, 111, 255, 0.2) inset;
 }
 
 .theme-toggle:active {
@@ -415,7 +529,7 @@ h2 {
     font-weight: 500;
     transition: all 0.3s ease;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2),
-                0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+        0 0 0 1px rgba(255, 255, 255, 0.03) inset;
 }
 
 .nav-btn:hover {
@@ -423,7 +537,7 @@ h2 {
     color: var(--text-primary);
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3),
-                0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+        0 0 0 1px rgba(255, 255, 255, 0.08) inset;
 }
 
 .nav-btn:active {
@@ -446,7 +560,7 @@ h2 {
     background: rgba(20, 41, 74, 0.5);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    border: 2px solid rgba(255, 255, 255, 0.1);
+    border: none;
     cursor: pointer;
     font-size: 24px;
     display: flex;
@@ -454,7 +568,7 @@ h2 {
     justify-content: center;
     transition: all var(--transition-normal);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2),
-                0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+        0 0 0 1px rgba(255, 255, 255, 0.03) inset;
     margin-left: auto;
     margin-top: var(--space-xl);
     margin-bottom: var(--space-md);
@@ -462,11 +576,10 @@ h2 {
 
 .trash-icon-btn:hover {
     background: rgba(139, 30, 45, 0.6);
-    border-color: var(--accent-error);
     transform: scale(1.1);
     box-shadow: 0 0 25px rgba(139, 30, 45, 0.5),
-                0 8px 24px rgba(0, 0, 0, 0.4),
-                0 0 0 1px rgba(139, 30, 45, 0.3) inset;
+        0 8px 24px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(139, 30, 45, 0.3) inset;
 }
 
 .trash-icon-btn:active {
@@ -490,9 +603,9 @@ h2 {
 
 .in-progress-header {
     background: linear-gradient(90deg,
-        #2B6FFF 0%,
-        #4D8FFF 50%,
-        #2B6FFF 100%);
+            #2B6FFF 0%,
+            #4D8FFF 50%,
+            #2B6FFF 100%);
     background-size: 200% 100%;
     background-clip: text;
     -webkit-background-clip: text;
@@ -522,25 +635,25 @@ h2 {
     margin-bottom: 15px;
     transition: all var(--transition-normal);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2),
-                0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+        0 0 0 1px rgba(255, 255, 255, 0.03) inset;
 }
 
 .in-progress-section {
     position: relative;
     background: linear-gradient(135deg,
-        rgba(10, 22, 40, 0.6) 0%,
-        rgba(13, 34, 69, 0.6) 25%,
-        rgba(10, 22, 40, 0.6) 50%,
-        rgba(13, 34, 69, 0.6) 75%,
-        rgba(10, 22, 40, 0.6) 100%);
+            rgba(10, 22, 40, 0.6) 0%,
+            rgba(13, 34, 69, 0.6) 25%,
+            rgba(10, 22, 40, 0.6) 50%,
+            rgba(13, 34, 69, 0.6) 75%,
+            rgba(10, 22, 40, 0.6) 100%);
     background-size: 400% 400%;
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border: 2px solid var(--bg-in-progress-border);
     box-shadow: 0 0 30px rgba(43, 111, 255, 0.2),
-                0 0 60px rgba(43, 111, 255, 0.1),
-                0 4px 16px rgba(0, 0, 0, 0.2),
-                0 0 0 1px rgba(43, 111, 255, 0.1) inset;
+        0 0 60px rgba(43, 111, 255, 0.1),
+        0 4px 16px rgba(0, 0, 0, 0.2),
+        0 0 0 1px rgba(43, 111, 255, 0.1) inset;
     animation: gradientShift 8s ease infinite;
 }
 
@@ -570,7 +683,7 @@ h2 {
     transition: all 0.25s ease;
     border-left: 3px solid transparent;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15),
-                0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+        0 0 0 1px rgba(255, 255, 255, 0.02) inset;
 }
 
 .todo-item:hover,
@@ -579,8 +692,8 @@ h2 {
     background: rgba(20, 41, 74, 0.7);
     transform: translateX(4px) scale(1.01);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3),
-                0 0 0 1px rgba(255, 255, 255, 0.08) inset,
-                0 0 20px rgba(43, 111, 255, 0.1);
+        0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+        0 0 20px rgba(43, 111, 255, 0.1);
     border-color: rgba(43, 111, 255, 0.2);
 }
 
@@ -612,9 +725,9 @@ h2 {
     border: 1px solid rgba(43, 111, 255, 0.3);
     border-left: 3px solid #2B6FFF;
     box-shadow: -3px 0 15px rgba(43, 111, 255, 0.3),
-                0 4px 16px rgba(0, 0, 0, 0.2),
-                0 0 0 1px rgba(43, 111, 255, 0.1) inset,
-                0 0 30px rgba(43, 111, 255, 0.15);
+        0 4px 16px rgba(0, 0, 0, 0.2),
+        0 0 0 1px rgba(43, 111, 255, 0.1) inset,
+        0 0 30px rgba(43, 111, 255, 0.15);
 }
 
 /* Priority Indicators */
@@ -713,14 +826,14 @@ button {
     border: 1px solid rgba(255, 255, 255, 0.05);
     color: var(--text-primary);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2),
-                0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+        0 0 0 1px rgba(255, 255, 255, 0.03) inset;
 }
 
 .back-btn:hover {
     background: rgba(20, 41, 74, 0.7);
     transform: translateX(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3),
-                0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+        0 0 0 1px rgba(255, 255, 255, 0.08) inset;
 }
 
 .edit-btn {
@@ -761,7 +874,7 @@ button {
     border: 1px solid rgba(255, 255, 255, 0.05);
     color: var(--text-primary);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2),
-                0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+        0 0 0 1px rgba(255, 255, 255, 0.03) inset;
 }
 
 .export-btn:hover,
@@ -769,7 +882,7 @@ button {
     background: rgba(20, 41, 74, 0.7);
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3),
-                0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+        0 0 0 1px rgba(255, 255, 255, 0.08) inset;
 }
 
 .empty-trash-btn {
@@ -804,7 +917,7 @@ button {
     font-size: 14px;
     transition: all 0.3s ease;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2),
-                0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+        0 0 0 1px rgba(255, 255, 255, 0.03) inset;
 }
 
 #todoInput:focus {
@@ -812,9 +925,9 @@ button {
     border-color: var(--border-focus);
     background: rgba(15, 29, 51, 0.7);
     box-shadow: 0 0 0 3px rgba(43, 111, 255, 0.15),
-                0 0 25px rgba(43, 111, 255, 0.15),
-                0 2px 8px rgba(0, 0, 0, 0.2),
-                0 0 0 1px rgba(43, 111, 255, 0.2) inset;
+        0 0 25px rgba(43, 111, 255, 0.15),
+        0 2px 8px rgba(0, 0, 0, 0.2),
+        0 0 0 1px rgba(43, 111, 255, 0.2) inset;
     transform: translateY(-1px);
 }
 
@@ -864,7 +977,7 @@ button {
     margin-bottom: var(--space-xl);
 }
 
-.progress-bar-section > label {
+.progress-bar-section>label {
     display: block;
     margin-bottom: var(--space-md);
     font-weight: 600;
@@ -879,7 +992,7 @@ button {
     padding: var(--space-lg);
     border-radius: var(--radius-sm);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2),
-                0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+        0 0 0 1px rgba(255, 255, 255, 0.03) inset;
 }
 
 .progress-stages {
@@ -914,7 +1027,7 @@ button {
     border: 3px solid var(--stage-inactive);
     transition: all var(--transition-normal);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2),
-                0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset;
 }
 
 .stage-item.active .stage-circle {
@@ -993,7 +1106,7 @@ button {
     border-radius: var(--radius-sm);
     cursor: pointer;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2),
-                0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+        0 0 0 1px rgba(255, 255, 255, 0.03) inset;
 }
 
 .priority-select:focus {
@@ -1001,9 +1114,9 @@ button {
     border-color: var(--border-focus);
     background: rgba(15, 29, 51, 0.7);
     box-shadow: 0 0 0 3px rgba(43, 111, 255, 0.15),
-                0 0 20px rgba(43, 111, 255, 0.15),
-                0 2px 8px rgba(0, 0, 0, 0.2),
-                0 0 0 1px rgba(43, 111, 255, 0.2) inset;
+        0 0 20px rgba(43, 111, 255, 0.15),
+        0 2px 8px rgba(0, 0, 0, 0.2),
+        0 0 0 1px rgba(43, 111, 255, 0.2) inset;
 }
 
 .in-progress-section-detail {
@@ -1030,7 +1143,7 @@ button {
     font-size: 14px;
     resize: vertical;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2),
-                0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+        0 0 0 1px rgba(255, 255, 255, 0.03) inset;
 }
 
 .notes-input:focus {
@@ -1038,9 +1151,9 @@ button {
     border-color: var(--border-focus);
     background: rgba(15, 29, 51, 0.7);
     box-shadow: 0 0 0 3px rgba(43, 111, 255, 0.15),
-                0 0 25px rgba(43, 111, 255, 0.15),
-                0 2px 8px rgba(0, 0, 0, 0.2),
-                0 0 0 1px rgba(43, 111, 255, 0.2) inset;
+        0 0 25px rgba(43, 111, 255, 0.15),
+        0 2px 8px rgba(0, 0, 0, 0.2),
+        0 0 0 1px rgba(43, 111, 255, 0.2) inset;
 }
 
 .char-count {
@@ -1062,8 +1175,8 @@ button {
     margin-bottom: var(--space-lg);
     border-left: 3px solid var(--accent-warning);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2),
-                0 0 0 1px rgba(255, 255, 255, 0.03) inset,
-                -3px 0 10px rgba(180, 83, 9, 0.2);
+        0 0 0 1px rgba(255, 255, 255, 0.03) inset,
+        -3px 0 10px rgba(180, 83, 9, 0.2);
 }
 
 .trash-info p {
@@ -1096,7 +1209,7 @@ button {
     border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: var(--radius-sm);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15),
-                0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+        0 0 0 1px rgba(255, 255, 255, 0.02) inset;
 }
 
 .empty-state p {
@@ -1125,8 +1238,8 @@ button {
     border-radius: var(--radius-sm);
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5),
-                0 0 0 1px rgba(255, 255, 255, 0.05) inset,
-                -4px 0 20px rgba(43, 111, 255, 0.3);
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+        -4px 0 20px rgba(43, 111, 255, 0.3);
     border-left: 4px solid var(--accent-primary);
     animation: slideIn var(--transition-normal);
     max-width: 300px;
@@ -1135,22 +1248,22 @@ button {
 .toast.success {
     border-left-color: var(--accent-success);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5),
-                0 0 0 1px rgba(255, 255, 255, 0.05) inset,
-                -4px 0 20px rgba(31, 122, 107, 0.3);
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+        -4px 0 20px rgba(31, 122, 107, 0.3);
 }
 
 .toast.error {
     border-left-color: var(--accent-error);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5),
-                0 0 0 1px rgba(255, 255, 255, 0.05) inset,
-                -4px 0 20px rgba(139, 30, 45, 0.3);
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+        -4px 0 20px rgba(139, 30, 45, 0.3);
 }
 
 .toast.warning {
     border-left-color: var(--accent-warning);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5),
-                0 0 0 1px rgba(255, 255, 255, 0.05) inset,
-                -4px 0 20px rgba(180, 83, 9, 0.3);
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+        -4px 0 20px rgba(180, 83, 9, 0.3);
 }
 
 @keyframes slideIn {
@@ -1158,6 +1271,7 @@ button {
         transform: translateX(400px);
         opacity: 0;
     }
+
     to {
         transform: translateX(0);
         opacity: 1;
@@ -1193,7 +1307,7 @@ button {
     font-size: 12px;
     transition: all 0.25s ease;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15),
-                0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+        0 0 0 1px rgba(255, 255, 255, 0.02) inset;
 }
 
 .action-btn:hover {
@@ -1201,7 +1315,7 @@ button {
     color: var(--text-primary);
     transform: scale(1.05);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25),
-                0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+        0 0 0 1px rgba(255, 255, 255, 0.08) inset;
 }
 
 .action-btn:active {
@@ -1216,6 +1330,180 @@ input[type="checkbox"] {
     height: 18px;
     cursor: pointer;
     accent-color: var(--accent-primary);
+}
+
+/* ===================================
+   SUBTASKS SECTION
+   =================================== */
+.subtasks-section {
+    margin-top: var(--space-xl);
+    padding: var(--space-lg);
+    background: rgba(15, 29, 51, 0.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-md);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.subtasks-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-md);
+}
+
+.subtasks-header label {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.export-markdown-btn {
+    padding: var(--space-xs) var(--space-md);
+    background: linear-gradient(135deg, var(--accent-primary), #1E52CC);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-white);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.25s ease;
+    box-shadow: 0 2px 6px rgba(43, 111, 255, 0.3);
+}
+
+.export-markdown-btn:hover {
+    background: linear-gradient(135deg, #3D7FFF, #2B6FFF);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(43, 111, 255, 0.4);
+}
+
+.export-markdown-btn:active {
+    transform: translateY(0);
+}
+
+.subtask-input-container {
+    display: flex;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+}
+
+.subtask-input {
+    flex: 1;
+    padding: var(--space-sm) var(--space-md);
+    background: var(--bg-input);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 14px;
+    transition: all var(--transition-normal);
+}
+
+.subtask-input:focus {
+    outline: none;
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 3px rgba(43, 111, 255, 0.1);
+}
+
+.add-subtask-btn {
+    padding: var(--space-sm) var(--space-lg);
+    background: var(--accent-primary);
+    border: none;
+    color: var(--text-white);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all var(--transition-normal);
+    white-space: nowrap;
+}
+
+.add-subtask-btn:hover {
+    background: #3D7FFF;
+    transform: scale(1.05);
+}
+
+.add-subtask-btn:active {
+    transform: scale(0.95);
+}
+
+.subtasks-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.subtask-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    margin-bottom: var(--space-sm);
+    background: rgba(20, 41, 74, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-normal);
+}
+
+.subtask-item:hover {
+    background: rgba(20, 41, 74, 0.5);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.subtask-item.completed {
+    opacity: 0.6;
+}
+
+.subtask-item.completed .subtask-text {
+    text-decoration: line-through;
+    color: var(--text-muted);
+}
+
+.subtask-checkbox {
+    flex-shrink: 0;
+}
+
+.subtask-text {
+    flex: 1;
+    color: var(--text-primary);
+    font-size: 14px;
+    word-break: break-word;
+}
+
+.subtask-delete-btn {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    background: rgba(139, 30, 45, 0.2);
+    border: 1px solid rgba(139, 30, 45, 0.3);
+    color: var(--accent-error);
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-normal);
+    line-height: 1;
+    padding: 0;
+}
+
+.subtask-delete-btn:hover {
+    background: var(--accent-error);
+    color: var(--text-white);
+    transform: scale(1.1);
+}
+
+.subtask-delete-btn:active {
+    transform: scale(0.9);
+}
+
+.subtask-empty {
+    color: var(--text-muted);
+    font-style: italic;
+    text-align: center;
+    padding: var(--space-lg);
 }
 
 /* ===================================
