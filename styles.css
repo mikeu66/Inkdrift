@@ -121,10 +121,18 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    background-color: var(--bg-primary);
+    background: linear-gradient(135deg,
+        #070E1A 0%,
+        #0A1628 25%,
+        #050B15 50%,
+        #0A1628 75%,
+        #070E1A 100%);
+    background-size: 400% 400%;
+    animation: gradientShift 20s ease infinite;
     color: var(--text-primary);
     padding: var(--space-lg);
     line-height: 1.6;
+    min-height: 100vh;
 }
 
 /* ===================================
@@ -133,10 +141,15 @@ body {
 .container {
     max-width: 700px;
     margin: 0 auto;
-    background-color: var(--bg-secondary);
+    background: rgba(15, 29, 51, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(43, 111, 255, 0.1);
     border-radius: var(--radius-md);
     padding: var(--space-xl);
-    box-shadow: var(--shadow-md);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
+                0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+                0 0 60px rgba(43, 111, 255, 0.1);
 }
 
 .view {
@@ -146,6 +159,28 @@ body {
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
+}
+
+/* Premium Gradient Animations */
+@keyframes gradientShift {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+@keyframes borderGlow {
+    0%, 100% {
+        opacity: 0.6;
+    }
+    50% {
+        opacity: 1;
+    }
 }
 
 /* ===================================
@@ -179,8 +214,10 @@ h1 {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background-color: var(--bg-tertiary);
-    border: 2px solid var(--border-default);
+    background: rgba(20, 41, 74, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 255, 255, 0.1);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -188,13 +225,17 @@ h1 {
     font-size: 20px;
     transition: all var(--transition-normal);
     flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2),
+                0 0 0 1px rgba(255, 255, 255, 0.03) inset;
 }
 
 .theme-toggle:hover {
-    background-color: var(--bg-hover);
+    background: rgba(20, 41, 74, 0.7);
     border-color: var(--accent-primary);
     transform: rotate(20deg);
-    box-shadow: 0 0 15px rgba(43, 111, 255, 0.3);
+    box-shadow: 0 0 20px rgba(43, 111, 255, 0.4),
+                0 4px 12px rgba(0, 0, 0, 0.3),
+                0 0 0 1px rgba(43, 111, 255, 0.2) inset;
 }
 
 .theme-toggle:active {
@@ -231,25 +272,38 @@ h2 {
 .nav-btn {
     flex: 1;
     padding: var(--space-md);
-    background-color: var(--bg-tertiary);
+    background: rgba(20, 41, 74, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     color: var(--text-secondary);
-    border: none;
     border-radius: var(--radius-sm);
     cursor: pointer;
     font-size: 14px;
     font-weight: 500;
-    transition: all var(--transition-fast);
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2),
+                0 0 0 1px rgba(255, 255, 255, 0.03) inset;
 }
 
 .nav-btn:hover {
-    background-color: var(--bg-hover);
+    background: rgba(20, 41, 74, 0.7);
     color: var(--text-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+}
+
+.nav-btn:active {
+    transform: translateY(0);
 }
 
 .nav-btn.active {
-    background-color: var(--accent-primary);
+    background: linear-gradient(135deg, #2B6FFF, #4D8FFF, #2B6FFF);
+    background-size: 200% 200%;
+    animation: gradientShift 6s ease infinite;
     color: var(--bg-primary);
-    box-shadow: 0 0 15px rgba(43, 111, 255, 0.3), 0 4px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 0 15px rgba(43, 111, 255, 0.4), 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* Trash Icon Button */
@@ -257,25 +311,30 @@ h2 {
     width: 50px;
     height: 50px;
     border-radius: 50%;
-    background-color: var(--bg-tertiary);
-    border: 2px solid var(--border-default);
+    background: rgba(20, 41, 74, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 255, 255, 0.1);
     cursor: pointer;
     font-size: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all var(--transition-normal);
-    box-shadow: var(--shadow-md);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2),
+                0 0 0 1px rgba(255, 255, 255, 0.03) inset;
     margin-left: auto;
     margin-top: var(--space-xl);
     margin-bottom: var(--space-md);
 }
 
 .trash-icon-btn:hover {
-    background-color: var(--accent-error);
+    background: rgba(139, 30, 45, 0.6);
     border-color: var(--accent-error);
     transform: scale(1.1);
-    box-shadow: var(--shadow-lg);
+    box-shadow: 0 0 25px rgba(139, 30, 45, 0.5),
+                0 8px 24px rgba(0, 0, 0, 0.4),
+                0 0 0 1px rgba(139, 30, 45, 0.3) inset;
 }
 
 .trash-icon-btn:active {
@@ -298,8 +357,16 @@ h2 {
 }
 
 .in-progress-header {
-    color: var(--accent-primary);
-    text-shadow: 0 0 20px rgba(43, 111, 255, 0.3);
+    background: linear-gradient(90deg,
+        #2B6FFF 0%,
+        #4D8FFF 50%,
+        #2B6FFF 100%);
+    background-size: 200% 100%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradientShift 4s ease infinite;
+    filter: drop-shadow(0 0 20px rgba(43, 111, 255, 0.3));
 }
 
 .todo-header {
@@ -315,16 +382,34 @@ h2 {
     list-style: none;
     min-height: 50px;
     padding: var(--space-md);
-    background-color: var(--bg-input);
+    background: rgba(15, 29, 51, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: var(--radius-sm);
     margin-bottom: 15px;
     transition: all var(--transition-normal);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2),
+                0 0 0 1px rgba(255, 255, 255, 0.03) inset;
 }
 
 .in-progress-section {
-    background-color: var(--bg-in-progress);
+    position: relative;
+    background: linear-gradient(135deg,
+        rgba(10, 22, 40, 0.6) 0%,
+        rgba(13, 34, 69, 0.6) 25%,
+        rgba(10, 22, 40, 0.6) 50%,
+        rgba(13, 34, 69, 0.6) 75%,
+        rgba(10, 22, 40, 0.6) 100%);
+    background-size: 400% 400%;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     border: 2px solid var(--bg-in-progress-border);
-    box-shadow: 0 0 20px rgba(43, 111, 255, 0.15), 0 0 40px rgba(43, 111, 255, 0.08);
+    box-shadow: 0 0 30px rgba(43, 111, 255, 0.2),
+                0 0 60px rgba(43, 111, 255, 0.1),
+                0 4px 16px rgba(0, 0, 0, 0.2),
+                0 0 0 1px rgba(43, 111, 255, 0.1) inset;
+    animation: gradientShift 8s ease infinite;
 }
 
 .todo-list.drag-over,
@@ -343,18 +428,28 @@ h2 {
     align-items: center;
     gap: var(--space-md);
     padding: var(--space-md);
-    background-color: var(--bg-tertiary);
+    background: rgba(20, 41, 74, 0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: var(--radius-sm);
     margin-bottom: var(--space-sm);
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: all 0.25s ease;
     border-left: 3px solid transparent;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15),
+                0 0 0 1px rgba(255, 255, 255, 0.02) inset;
 }
 
 .todo-item:hover,
 .completed-item:hover,
 .trash-item:hover {
-    background-color: var(--bg-hover);
+    background: rgba(20, 41, 74, 0.7);
+    transform: translateX(4px) scale(1.01);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+                0 0 20px rgba(43, 111, 255, 0.1);
+    border-color: rgba(43, 111, 255, 0.2);
 }
 
 .todo-item:last-child,
@@ -377,8 +472,17 @@ h2 {
 }
 
 .in-progress-item {
-    border-left: 3px solid var(--accent-primary);
-    box-shadow: -3px 0 10px rgba(43, 111, 255, 0.2);
+    position: relative;
+    border-left: 3px solid transparent;
+    background: rgba(20, 41, 74, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(43, 111, 255, 0.3);
+    border-left: 3px solid #2B6FFF;
+    box-shadow: -3px 0 15px rgba(43, 111, 255, 0.3),
+                0 4px 16px rgba(0, 0, 0, 0.2),
+                0 0 0 1px rgba(43, 111, 255, 0.1) inset,
+                0 0 30px rgba(43, 111, 255, 0.15);
 }
 
 /* Priority Indicators */
@@ -456,16 +560,35 @@ button {
     cursor: pointer;
     font-size: 14px;
     font-weight: 500;
-    transition: all var(--transition-fast);
+    transition: all 0.25s ease;
+}
+
+.btn:active,
+.back-btn:active,
+.edit-btn:active,
+.delete-btn:active,
+.restore-btn:active,
+.export-btn:active,
+.import-btn:active,
+.empty-trash-btn:active {
+    transform: scale(0.96);
 }
 
 .back-btn {
-    background-color: var(--bg-tertiary);
+    background: rgba(20, 41, 74, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     color: var(--text-primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2),
+                0 0 0 1px rgba(255, 255, 255, 0.03) inset;
 }
 
 .back-btn:hover {
-    background-color: var(--bg-hover);
+    background: rgba(20, 41, 74, 0.7);
+    transform: translateX(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.08) inset;
 }
 
 .edit-btn {
@@ -500,13 +623,21 @@ button {
 
 .export-btn,
 .import-btn {
-    background-color: var(--bg-tertiary);
+    background: rgba(20, 41, 74, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     color: var(--text-primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2),
+                0 0 0 1px rgba(255, 255, 255, 0.03) inset;
 }
 
 .export-btn:hover,
 .import-btn:hover {
-    background-color: var(--bg-hover);
+    background: rgba(20, 41, 74, 0.7);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.08) inset;
 }
 
 .empty-trash-btn {
@@ -532,34 +663,52 @@ button {
 #todoInput {
     flex: 1;
     padding: var(--space-md);
-    background-color: var(--bg-input);
+    background: rgba(15, 29, 51, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     color: var(--text-primary);
-    border: 1px solid var(--border-default);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--radius-sm);
     font-size: 14px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2),
+                0 0 0 1px rgba(255, 255, 255, 0.03) inset;
 }
 
 #todoInput:focus {
     outline: none;
     border-color: var(--border-focus);
-    box-shadow: 0 0 0 3px rgba(43, 111, 255, 0.15), 0 0 20px rgba(43, 111, 255, 0.1);
+    background: rgba(15, 29, 51, 0.7);
+    box-shadow: 0 0 0 3px rgba(43, 111, 255, 0.15),
+                0 0 25px rgba(43, 111, 255, 0.15),
+                0 2px 8px rgba(0, 0, 0, 0.2),
+                0 0 0 1px rgba(43, 111, 255, 0.2) inset;
+    transform: translateY(-1px);
 }
 
 #addBtn {
     padding: var(--space-md) var(--space-lg);
-    background-color: var(--accent-primary);
+    background: linear-gradient(135deg, #2B6FFF, #4D8FFF, #2B6FFF);
+    background-size: 200% 200%;
     color: var(--bg-primary);
     border: none;
     border-radius: var(--radius-sm);
     cursor: pointer;
     font-size: 14px;
     font-weight: 600;
-    transition: all var(--transition-fast);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
 }
 
 #addBtn:hover {
-    opacity: 0.9;
-    box-shadow: 0 0 20px rgba(43, 111, 255, 0.4), 0 4px 12px rgba(0, 0, 0, 0.3);
+    background-position: 100% 50%;
+    box-shadow: 0 0 20px rgba(43, 111, 255, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3);
+    transform: translateY(-1px) scale(1.02);
+}
+
+#addBtn:active {
+    transform: translateY(0) scale(0.98);
 }
 
 /* ===================================
@@ -591,9 +740,14 @@ button {
 }
 
 .progress-bar-container {
-    background-color: var(--bg-tertiary);
+    background: rgba(20, 41, 74, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     padding: var(--space-lg);
     border-radius: var(--radius-sm);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2),
+                0 0 0 1px rgba(255, 255, 255, 0.03) inset;
 }
 
 .progress-stages {
@@ -609,6 +763,15 @@ button {
     gap: var(--space-sm);
     cursor: pointer;
     user-select: none;
+    transition: all 0.25s ease;
+}
+
+.stage-item:hover {
+    transform: scale(1.1);
+}
+
+.stage-item:active {
+    transform: scale(0.95);
 }
 
 .stage-circle {
@@ -618,6 +781,8 @@ button {
     background-color: var(--stage-inactive);
     border: 3px solid var(--stage-inactive);
     transition: all var(--transition-normal);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2),
+                0 0 0 1px rgba(255, 255, 255, 0.05) inset;
 }
 
 .stage-item.active .stage-circle {
@@ -688,17 +853,25 @@ button {
 
 .priority-select {
     padding: var(--space-sm) var(--space-md);
-    background-color: var(--bg-input);
+    background: rgba(15, 29, 51, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     color: var(--text-primary);
-    border: 1px solid var(--border-default);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--radius-sm);
     cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2),
+                0 0 0 1px rgba(255, 255, 255, 0.03) inset;
 }
 
 .priority-select:focus {
     outline: none;
     border-color: var(--border-focus);
-    box-shadow: 0 0 0 3px rgba(43, 111, 255, 0.15), 0 0 15px rgba(43, 111, 255, 0.1);
+    background: rgba(15, 29, 51, 0.7);
+    box-shadow: 0 0 0 3px rgba(43, 111, 255, 0.15),
+                0 0 20px rgba(43, 111, 255, 0.15),
+                0 2px 8px rgba(0, 0, 0, 0.2),
+                0 0 0 1px rgba(43, 111, 255, 0.2) inset;
 }
 
 .in-progress-section-detail {
@@ -715,19 +888,27 @@ button {
     width: 100%;
     min-height: 150px;
     padding: var(--space-md);
-    background-color: var(--bg-input);
+    background: rgba(15, 29, 51, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     color: var(--text-primary);
-    border: 1px solid var(--border-default);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--radius-sm);
     font-family: inherit;
     font-size: 14px;
     resize: vertical;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2),
+                0 0 0 1px rgba(255, 255, 255, 0.03) inset;
 }
 
 .notes-input:focus {
     outline: none;
     border-color: var(--border-focus);
-    box-shadow: 0 0 0 3px rgba(43, 111, 255, 0.15), 0 0 20px rgba(43, 111, 255, 0.1);
+    background: rgba(15, 29, 51, 0.7);
+    box-shadow: 0 0 0 3px rgba(43, 111, 255, 0.15),
+                0 0 25px rgba(43, 111, 255, 0.15),
+                0 2px 8px rgba(0, 0, 0, 0.2),
+                0 0 0 1px rgba(43, 111, 255, 0.2) inset;
 }
 
 .char-count {
@@ -740,11 +921,17 @@ button {
    TRASH VIEW
    =================================== */
 .trash-info {
-    background-color: var(--bg-tertiary);
+    background: rgba(20, 41, 74, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     padding: var(--space-md);
     border-radius: var(--radius-sm);
     margin-bottom: var(--space-lg);
     border-left: 3px solid var(--accent-warning);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2),
+                0 0 0 1px rgba(255, 255, 255, 0.03) inset,
+                -3px 0 10px rgba(180, 83, 9, 0.2);
 }
 
 .trash-info p {
@@ -771,6 +958,13 @@ button {
     padding: var(--space-xl);
     color: var(--text-muted);
     display: none;
+    background: rgba(15, 29, 51, 0.3);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15),
+                0 0 0 1px rgba(255, 255, 255, 0.02) inset;
 }
 
 .empty-state p {
@@ -792,10 +986,15 @@ button {
 
 .toast {
     padding: var(--space-md) var(--space-lg);
-    background-color: var(--bg-secondary);
+    background: rgba(15, 29, 51, 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     color: var(--text-primary);
     border-radius: var(--radius-sm);
-    box-shadow: var(--shadow-lg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+                -4px 0 20px rgba(43, 111, 255, 0.3);
     border-left: 4px solid var(--accent-primary);
     animation: slideIn var(--transition-normal);
     max-width: 300px;
@@ -803,14 +1002,23 @@ button {
 
 .toast.success {
     border-left-color: var(--accent-success);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+                -4px 0 20px rgba(31, 122, 107, 0.3);
 }
 
 .toast.error {
     border-left-color: var(--accent-error);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+                -4px 0 20px rgba(139, 30, 45, 0.3);
 }
 
 .toast.warning {
     border-left-color: var(--accent-warning);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+                -4px 0 20px rgba(180, 83, 9, 0.3);
 }
 
 @keyframes slideIn {
@@ -843,18 +1051,29 @@ button {
 
 .action-btn {
     padding: var(--space-xs) var(--space-sm);
-    background-color: var(--bg-input);
+    background: rgba(15, 29, 51, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     color: var(--text-secondary);
-    border: none;
     border-radius: var(--radius-sm);
     cursor: pointer;
     font-size: 12px;
-    transition: all var(--transition-fast);
+    transition: all 0.25s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15),
+                0 0 0 1px rgba(255, 255, 255, 0.02) inset;
 }
 
 .action-btn:hover {
-    background-color: var(--bg-hover);
+    background: rgba(20, 41, 74, 0.7);
     color: var(--text-primary);
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25),
+                0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+}
+
+.action-btn:active {
+    transform: scale(0.95);
 }
 
 /* ===================================

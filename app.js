@@ -56,14 +56,22 @@ async function importTodos() {
             // Merge imported todos with existing
             const imported = result.todos;
 
+            // Ensure all imported tasks have valid unique IDs
+            const allExistingIds = new Set(appState.todos.map(t => t.id));
+            imported.forEach(task => {
+                // If task doesn't have an ID or has a duplicate ID, generate a new one
+                if (!task.id || allExistingIds.has(task.id)) {
+                    task.id = generateUUID();
+                }
+                allExistingIds.add(task.id);
+            });
+
             // Ask user if they want to merge or replace
             const shouldMerge = confirm(`Import ${result.count} tasks. Do you want to merge with existing tasks?\n\nOK = Merge\nCancel = Replace all`);
 
             if (shouldMerge) {
-                // Merge: Add imported todos that don't exist
-                const existingIds = new Set(appState.todos.map(t => t.id));
-                const newTodos = imported.filter(t => !existingIds.has(t.id));
-                appState.todos = [...appState.todos, ...newTodos];
+                // Merge: Add all imported todos (IDs are now guaranteed unique)
+                appState.todos = [...appState.todos, ...imported];
             } else {
                 // Replace
                 appState.todos = imported;
