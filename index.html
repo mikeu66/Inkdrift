@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>To-Do App</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 
 <body>
@@ -124,6 +125,19 @@
                         <!-- Subtasks will be added here -->
                     </ul>
                 </div>
+
+                <button id="brainstormBtn" class="brainstorm-btn" style="display: none;">Start Brainstorming</button>
+
+                <!-- Planning Stage: Show brainstorm result -->
+                <div id="planningResultSection" class="planning-result-section" style="display: none;">
+                    <div class="planning-result-header">
+                        <label>Project Plan:</label>
+                        <button id="editPlanBtn" class="edit-plan-btn">Edit Plan</button>
+                    </div>
+                    <div id="planningResultContent" class="planning-result-content">
+                        <!-- Rendered markdown will appear here -->
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -161,6 +175,109 @@
 
             <div class="empty-state" id="trashEmptyState">
                 <p>Trash is empty.</p>
+            </div>
+        </div>
+
+        <!-- Brainstorm View -->
+        <div id="brainstormView" class="view" style="display: none;">
+            <div class="bs-header">
+                <button id="backBtnBrainstorm" class="back-btn">← Back</button>
+                <div class="bs-title-section">
+                    <h2 id="brainstormTitle">Brainstorming</h2>
+                    <p id="brainstormSubtitle" class="bs-subtitle">Let's plan your project together</p>
+                </div>
+            </div>
+
+            <!-- Wizard Container -->
+            <div id="bsWizardContainer" class="bs-wizard-container">
+                <!-- Progress Indicator -->
+                <div class="bs-progress-indicator">
+                    <div class="bs-progress-step" data-section="1">
+                        <div class="bs-step-number">1</div>
+                        <div class="bs-step-label">Goal</div>
+                    </div>
+                    <div class="bs-progress-step" data-section="2">
+                        <div class="bs-step-number">2</div>
+                        <div class="bs-step-label">Scope</div>
+                    </div>
+                    <div class="bs-progress-step" data-section="3">
+                        <div class="bs-step-number">3</div>
+                        <div class="bs-step-label">Tech Stack</div>
+                    </div>
+                    <div class="bs-progress-step" data-section="4">
+                        <div class="bs-step-number">4</div>
+                        <div class="bs-step-label">Phases</div>
+                    </div>
+                    <div class="bs-progress-step" data-section="5">
+                        <div class="bs-step-number">5</div>
+                        <div class="bs-step-label">Risks</div>
+                    </div>
+                </div>
+
+                <!-- Section Container -->
+                <div id="bsSectionContainer" class="bs-section-container">
+                    <div class="bs-section-header">
+                        <h3 id="bsSectionTitle" class="bs-section-title"></h3>
+                        <p id="bsSectionDescription" class="bs-section-description"></p>
+                    </div>
+
+                    <!-- Chat Container -->
+                    <div id="bsChatContainer" class="bs-chat-container">
+                        <div id="bsChatMessages" class="bs-chat-messages">
+                            <!-- Messages will be added here dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Input Area -->
+                    <div class="bs-input-area">
+                        <textarea
+                            id="bsUserInput"
+                            class="bs-user-input"
+                            placeholder="Type your response here..."
+                            rows="3"
+                        ></textarea>
+                        <button id="bsSubmitBtn" class="bs-btn bs-btn-primary">Send</button>
+                    </div>
+
+                    <!-- Navigation Buttons -->
+                    <div class="bs-navigation-buttons">
+                        <button id="bsBackBtn" class="bs-btn bs-btn-secondary" disabled>← Back</button>
+                        <button id="bsNextBtn" class="bs-btn bs-btn-secondary" disabled>Next →</button>
+                        <button id="bsRestartBtn" class="bs-btn bs-btn-tertiary">Restart Section</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview Container (shown after all sections complete) -->
+            <div id="bsPreviewContainer" class="bs-preview-container" style="display: none;">
+                <div class="bs-preview-header">
+                    <h3>Project Plan Preview</h3>
+                    <p>Review and edit your project plan before exporting</p>
+                </div>
+
+                <div class="bs-preview-content">
+                    <div class="bs-preview-split">
+                        <div class="bs-preview-edit">
+                            <h4>Edit Markdown</h4>
+                            <textarea id="bsMarkdownEditor" class="bs-markdown-editor"></textarea>
+                        </div>
+                        <div class="bs-preview-render">
+                            <h4>Preview</h4>
+                            <div id="bsMarkdownPreview" class="bs-markdown-preview"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bs-preview-actions">
+                    <button id="bsExportBtn" class="bs-btn bs-btn-primary">Export & Save to Task</button>
+                    <button id="bsBackToWizardBtn" class="bs-btn bs-btn-secondary">← Back to Wizard</button>
+                </div>
+            </div>
+
+            <!-- Loading Overlay -->
+            <div id="bsLoadingOverlay" class="bs-loading-overlay" style="display: none;">
+                <div class="bs-loading-spinner"></div>
+                <p class="bs-loading-text">Thinking...</p>
             </div>
         </div>
     </div>

@@ -1,6 +1,15 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const Anthropic = require('@anthropic-ai/sdk');
+
+// Initialize Claude client (only if API key is available)
+let claudeClient = null;
+if (process.env.ANTHROPIC_API_KEY) {
+    claudeClient = new Anthropic({
+        apiKey: process.env.ANTHROPIC_API_KEY
+    });
+}
 
 // Storage file path (using app.getPath for proper user data directory)
 const getStoragePath = () => {
@@ -202,6 +211,89 @@ function setupIpcHandlers() {
                 error: error.message,
                 errorType: error instanceof SyntaxError ? 'INVALID_JSON' : 'VALIDATION_ERROR'
             };
+        }
+    });
+
+    // Call Claude API for brainstorming
+    ipcMain.handle('call-claude', async (event, params) => {
+        try {
+            if (!claudeClient) {
+                throw new Error('Claude client not initialized. Set ANTHROPIC_API_KEY environment variable.');
+            }
+
+            const { systemPrompt, messages, options = {} } = params;
+
+            console.log('[IPC] Calling Claude API for brainstorming...');
+
+            const response = await claudeClient.messages.create({
+                model: options.model || 'claude-3-haiku-20240307',
+                max_tokens: options.max_tokens || 2048,
+                temperature: options.temperature || 1.0,
+                system: systemPrompt,
+                messages: messages.map(msg => ({
+                    role: msg.role,
+                    content: msg.content
+                }))
+            });
+
+            // Extract text from response
+            if (response.content && response.content.length > 0) {
+                const text = response.content[0].text;
+                console.log('[IPC] Claude API call successful');
+                return {
+                    success: true,
+                    text
+                };
+            }
+
+            throw new Error('Empty response from Claude API');
+
+        } catch (error) {
+            console.error('[IPC] Error calling Claude API:', error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    });
+
+    // Check if Claude API is available
+    ipcMain.handle('check-claude-available', async () => {
+        return {
+            available: claudeClient !== null,
+            hasApiKey: !!process.env.ANTHROPIC_API_KEY
+        };
+    });
+
+    // Save brainstorm result to markdown file
+    ipcMain.handle('save-brainstorm-file', async (event, { content, suggestedFilename }) => {
+        try {
+            const result = await dialog.showSaveDialog({
+                title: 'Save Project Plan',
+                defaultPath: suggestedFilename || `project-plan-${new Date().toISOString().split('T')[0]}.md`,
+                filters: [
+                    { name: 'Markdown Files', extensions: ['md'] },
+                    { name: 'All Files', extensions: ['*'] }
+                ],
+                properties: ['createDirectory', 'showOverwriteConfirmation']
+            });
+
+            if (result.canceled) {
+                return { success: false, cancelled: true };
+            }
+
+            // Ensure directory exists
+            const dir = path.dirname(result.filePath);
+            if (!fs.existsSync(dir)) {
+                fs.mkdirSync(dir, { recursive: true });
+            }
+
+            fs.writeFileSync(result.filePath, content, 'utf8');
+
+            return { success: true, filePath: result.filePath };
+        } catch (error) {
+            console.error('Error saving brainstorm file:', error);
+            return { success: false, error: error.message };
         }
     });
 }

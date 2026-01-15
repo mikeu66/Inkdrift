@@ -38,5 +38,31 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     importTodos: () => {
         return ipcRenderer.invoke('import-todos');
+    },
+
+    // Brainstorming API
+    callClaude: (params) => {
+        // Validate params structure
+        if (!params || typeof params !== 'object') {
+            throw new Error('Invalid params: must be an object');
+        }
+        if (!params.systemPrompt || typeof params.systemPrompt !== 'string') {
+            throw new Error('Invalid params: systemPrompt must be a string');
+        }
+        if (!Array.isArray(params.messages)) {
+            throw new Error('Invalid params: messages must be an array');
+        }
+        return ipcRenderer.invoke('call-claude', params);
+    },
+
+    checkClaudeAvailable: () => {
+        return ipcRenderer.invoke('check-claude-available');
+    },
+
+    saveBrainstormFile: (content, suggestedFilename) => {
+        if (typeof content !== 'string') {
+            throw new Error('Content must be a string');
+        }
+        return ipcRenderer.invoke('save-brainstorm-file', { content, suggestedFilename });
     }
 });
