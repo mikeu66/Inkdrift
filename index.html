@@ -138,6 +138,23 @@
                         <!-- Rendered markdown will appear here -->
                     </div>
                 </div>
+
+                <!-- Action Items Section -->
+                <div id="actionItemsSection" class="action-items-section" style="display: none;">
+                    <div class="action-items-header">
+                        <label>Action Items:</label>
+                        <div class="action-items-header-buttons">
+                            <button id="generateActionItemsBtn" class="generate-action-items-btn">Generate Action Items</button>
+                        </div>
+                    </div>
+                    <div id="actionItemsLoading" class="action-items-loading" style="display: none;">
+                        <div class="action-items-spinner"></div>
+                        <span>Generating action items...</span>
+                    </div>
+                    <ul id="actionItemsList" class="action-items-list">
+                        <!-- Action items will be added here -->
+                    </ul>
+                </div>
             </div>
         </div>
 
@@ -188,62 +205,23 @@
                 </div>
             </div>
 
-            <!-- Wizard Container -->
-            <div id="bsWizardContainer" class="bs-wizard-container">
-                <!-- Progress Indicator -->
-                <div class="bs-progress-indicator">
-                    <div class="bs-progress-step" data-section="1">
-                        <div class="bs-step-number">1</div>
-                        <div class="bs-step-label">Goal</div>
-                    </div>
-                    <div class="bs-progress-step" data-section="2">
-                        <div class="bs-step-number">2</div>
-                        <div class="bs-step-label">Scope</div>
-                    </div>
-                    <div class="bs-progress-step" data-section="3">
-                        <div class="bs-step-number">3</div>
-                        <div class="bs-step-label">Tech Stack</div>
-                    </div>
-                    <div class="bs-progress-step" data-section="4">
-                        <div class="bs-step-number">4</div>
-                        <div class="bs-step-label">Phases</div>
-                    </div>
-                    <div class="bs-progress-step" data-section="5">
-                        <div class="bs-step-number">5</div>
-                        <div class="bs-step-label">Risks</div>
-                    </div>
+            <!-- Chat Container -->
+            <div id="bsChatContainer" class="bs-chat-container">
+                <div id="bsChatMessages" class="bs-chat-messages">
+                    <!-- Messages will be added here dynamically -->
                 </div>
 
-                <!-- Section Container -->
-                <div id="bsSectionContainer" class="bs-section-container">
-                    <div class="bs-section-header">
-                        <h3 id="bsSectionTitle" class="bs-section-title"></h3>
-                        <p id="bsSectionDescription" class="bs-section-description"></p>
-                    </div>
-
-                    <!-- Chat Container -->
-                    <div id="bsChatContainer" class="bs-chat-container">
-                        <div id="bsChatMessages" class="bs-chat-messages">
-                            <!-- Messages will be added here dynamically -->
-                        </div>
-                    </div>
-
-                    <!-- Input Area -->
-                    <div class="bs-input-area">
-                        <textarea
-                            id="bsUserInput"
-                            class="bs-user-input"
-                            placeholder="Type your response here..."
-                            rows="3"
-                        ></textarea>
+                <!-- Input Area -->
+                <div class="bs-input-area">
+                    <textarea
+                        id="bsUserInput"
+                        class="bs-user-input"
+                        placeholder="Tell me about your project..."
+                        rows="3"
+                    ></textarea>
+                    <div class="bs-input-buttons">
                         <button id="bsSubmitBtn" class="bs-btn bs-btn-primary">Send</button>
-                    </div>
-
-                    <!-- Navigation Buttons -->
-                    <div class="bs-navigation-buttons">
-                        <button id="bsBackBtn" class="bs-btn bs-btn-secondary" disabled>← Back</button>
-                        <button id="bsNextBtn" class="bs-btn bs-btn-secondary" disabled>Next →</button>
-                        <button id="bsRestartBtn" class="bs-btn bs-btn-tertiary">Restart Section</button>
+                        <button id="bsGeneratePlanBtn" class="bs-btn bs-btn-secondary">Generate Plan</button>
                     </div>
                 </div>
             </div>
@@ -269,8 +247,8 @@
                 </div>
 
                 <div class="bs-preview-actions">
-                    <button id="bsExportBtn" class="bs-btn bs-btn-primary">Export & Save to Task</button>
-                    <button id="bsBackToWizardBtn" class="bs-btn bs-btn-secondary">← Back to Wizard</button>
+                    <button id="bsSaveBtn" class="bs-btn bs-btn-primary">Save & Continue</button>
+                    <button id="bsBackToWizardBtn" class="bs-btn bs-btn-secondary">← Back to Chat</button>
                 </div>
             </div>
 

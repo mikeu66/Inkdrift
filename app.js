@@ -544,9 +544,11 @@ function renderDetailView() {
     // Planning result section - show when in planning stage with brainstorm result
     const planningResultSection = document.getElementById('planningResultSection');
     const planningResultContent = document.getElementById('planningResultContent');
+    const actionItemsSection = document.getElementById('actionItemsSection');
 
     if (currentStage === 'planning' && todo.brainstormResult) {
         planningResultSection.style.display = 'block';
+        actionItemsSection.style.display = 'block';
 
         // Render markdown
         try {
@@ -562,8 +564,12 @@ function renderDetailView() {
         } catch (error) {
             planningResultContent.innerHTML = `<pre>${todo.brainstormResult}</pre>`;
         }
+
+        // Render action items
+        renderActionItems();
     } else {
         planningResultSection.style.display = 'none';
+        actionItemsSection.style.display = 'none';
     }
 }
 
@@ -703,6 +709,322 @@ function deleteSubtask(index) {
     saveTodos();
     renderSubtasks();
     showToast('Subtask deleted', 'info');
+}
+
+// ===================================
+// ACTION ITEMS MANAGEMENT
+// ===================================
+const ACTION_ITEMS_PROMPT = `Based on this project plan, generate 5-10 specific action items in chronological order (when they need to be done).
+
+For each action item provide:
+1. A clear, actionable task description (what to do)
+2. Estimated hours needed (be realistic, use whole numbers)
+
+Return ONLY a valid JSON array with no other text:
+[{"text": "Description here", "hoursNeeded": 4}, ...]`;
+
+async function generateActionItems() {
+    const todo = findTodoById(appState.currentTodoId);
+    if (!todo || !todo.brainstormResult) {
+        showToast('No project plan found', 'error');
+        return;
+    }
+
+    // Show loading
+    document.getElementById('actionItemsLoading').style.display = 'flex';
+    document.getElementById('generateActionItemsBtn').disabled = true;
+
+    try {
+        const claudeStatus = await window.electronAPI.checkClaudeAvailable();
+        if (!claudeStatus.available) {
+            throw new Error('Claude API not available. Please set ANTHROPIC_API_KEY environment variable.');
+        }
+
+        const response = await window.electronAPI.callClaude({
+            systemPrompt: ACTION_ITEMS_PROMPT,
+            messages: [{ role: 'user', content: todo.brainstormResult }],
+            options: {
+                model: 'claude-3-haiku-20240307',
+                max_tokens: 2048
+            }
+        });
+
+        if (!response.success) {
+            throw new Error(response.error || 'Failed to generate action items');
+        }
+
+        // Parse JSON response - handle potential markdown code blocks
+        let jsonText = response.text.trim();
+        if (jsonText.startsWith('```')) {
+            jsonText = jsonText.replace(/```json?\n?/g, '').replace(/```$/g, '').trim();
+        }
+
+        const items = JSON.parse(jsonText);
+        todo.actionItems = items.map((item, index) => ({
+            id: generateUUID(),
+            text: item.text,
+            hoursNeeded: item.hoursNeeded || 1,
+            completed: false,
+            order: index
+        }));
+
+        await saveTodos();
+        renderActionItems();
+        showToast('Action items generated', 'success');
+    } catch (error) {
+        console.error('Generate action items error:', error);
+        showToast(error.message, 'error');
+    } finally {
+        document.getElementById('actionItemsLoading').style.display = 'none';
+        document.getElementById('generateActionItemsBtn').disabled = false;
+    }
+}
+
+function renderActionItems() {
+    const todo = findTodoById(appState.currentTodoId);
+    if (!todo) return;
+
+    const actionItemsList = document.getElementById('actionItemsList');
+    actionItemsList.innerHTML = '';
+
+    // Ensure actionItems array exists
+    if (!todo.actionItems) {
+        todo.actionItems = [];
+    }
+
+    if (todo.actionItems.length === 0) {
+        const emptyMsg = document.createElement('li');
+        emptyMsg.className = 'action-item-empty';
+        emptyMsg.textContent = 'No action items yet. Click "Generate Action Items" to create them from your project plan.';
+        actionItemsList.appendChild(emptyMsg);
+        return;
+    }
+
+    // Sort by order
+    const sortedItems = [...todo.actionItems].sort((a, b) => a.order - b.order);
+
+    sortedItems.forEach((item, index) => {
+        const li = createActionItemElement(item, index);
+        actionItemsList.appendChild(li);
+    });
+}
+
+function createActionItemElement(item, index) {
+    const container = document.createElement('div');
+    container.className = 'action-item-container';
+    container.dataset.id = item.id;
+
+    const li = document.createElement('li');
+    li.className = `action-item ${item.completed ? 'completed' : ''}`;
+
+    // Checkbox
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = item.completed;
+    checkbox.className = 'action-item-checkbox';
+    checkbox.addEventListener('change', () => toggleActionItemComplete(item.id));
+
+    // Order number
+    const orderNum = document.createElement('span');
+    orderNum.className = 'action-item-order';
+    orderNum.textContent = `${index + 1}.`;
+
+    // Text input (editable)
+    const textInput = document.createElement('input');
+    textInput.type = 'text';
+    textInput.value = item.text;
+    textInput.className = 'action-item-text';
+    textInput.addEventListener('blur', () => {
+        const oldText = item.text;
+        const newText = textInput.value;
+        if (oldText !== newText) {
+            // Clear elaboration when text changes
+            updateActionItem(item.id, { text: newText, elaboration: null });
+        }
+    });
+    textInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            textInput.blur();
+        }
+    });
+
+    // Hours container
+    const hoursContainer = document.createElement('div');
+    hoursContainer.className = 'action-item-hours-container';
+
+    const hoursInput = document.createElement('input');
+    hoursInput.type = 'number';
+    hoursInput.value = item.hoursNeeded;
+    hoursInput.min = 1;
+    hoursInput.max = 999;
+    hoursInput.className = 'action-item-hours';
+    hoursInput.addEventListener('blur', () => updateActionItem(item.id, { hoursNeeded: parseInt(hoursInput.value) || 1 }));
+    hoursInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            hoursInput.blur();
+        }
+    });
+
+    const hoursLabel = document.createElement('span');
+    hoursLabel.className = 'action-item-hours-label';
+    hoursLabel.textContent = 'hrs';
+
+    hoursContainer.appendChild(hoursInput);
+    hoursContainer.appendChild(hoursLabel);
+
+    // Elaborate button
+    const elaborateBtn = document.createElement('button');
+    elaborateBtn.className = `action-item-elaborate-btn ${item.isExpanded ? 'expanded' : ''}`;
+    elaborateBtn.textContent = item.isExpanded ? 'Collapse' : 'Elaborate';
+    elaborateBtn.title = item.isExpanded ? 'Hide details' : 'Show detailed summary';
+    elaborateBtn.addEventListener('click', () => elaborateActionItem(item.id, elaborateBtn, elaborationArea));
+
+    // Delete button
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'action-item-delete-btn';
+    deleteBtn.textContent = '×';
+    deleteBtn.title = 'Delete action item';
+    deleteBtn.addEventListener('click', () => deleteActionItem(item.id));
+
+    li.appendChild(checkbox);
+    li.appendChild(orderNum);
+    li.appendChild(textInput);
+    li.appendChild(hoursContainer);
+    li.appendChild(elaborateBtn);
+    li.appendChild(deleteBtn);
+
+    // Elaboration dropdown area
+    const elaborationArea = document.createElement('div');
+    elaborationArea.className = `action-item-elaboration ${item.isExpanded ? 'expanded' : ''}`;
+
+    if (item.elaboration) {
+        elaborationArea.innerHTML = item.elaboration;
+    }
+
+    container.appendChild(li);
+    container.appendChild(elaborationArea);
+
+    return container;
+}
+
+async function elaborateActionItem(id, btn, elaborationArea) {
+    const todo = findTodoById(appState.currentTodoId);
+    if (!todo || !todo.actionItems) return;
+
+    const item = todo.actionItems.find(i => i.id === id);
+    if (!item) return;
+
+    // If already expanded and has elaboration, just toggle visibility
+    if (item.isExpanded && item.elaboration) {
+        item.isExpanded = false;
+        btn.textContent = 'Elaborate';
+        btn.title = 'Show detailed summary';
+        btn.classList.remove('expanded');
+        elaborationArea.classList.remove('expanded');
+        saveTodos();
+        return;
+    }
+
+    // If collapsed but has elaboration, just expand
+    if (!item.isExpanded && item.elaboration) {
+        item.isExpanded = true;
+        btn.textContent = 'Collapse';
+        btn.title = 'Hide details';
+        btn.classList.add('expanded');
+        elaborationArea.classList.add('expanded');
+        saveTodos();
+        return;
+    }
+
+    // Generate new elaboration
+    btn.disabled = true;
+    btn.textContent = 'Loading...';
+    elaborationArea.innerHTML = '<div class="action-item-elaboration-loading"><div class="action-items-spinner"></div><span>Generating summary...</span></div>';
+    elaborationArea.classList.add('expanded');
+
+    try {
+        const claudeStatus = await window.electronAPI.checkClaudeAvailable();
+        if (!claudeStatus.available) {
+            throw new Error('Claude API not available');
+        }
+
+        const prompt = `Based on this project plan context and the specific action item, provide a brief but helpful elaboration (2-4 sentences) explaining what this task involves, any key considerations, and practical tips for completing it.
+
+Project Plan:
+${todo.brainstormResult}
+
+Action Item: "${item.text}"
+Estimated Hours: ${item.hoursNeeded}
+
+Provide a concise, actionable summary. No markdown formatting, just plain text.`;
+
+        const response = await window.electronAPI.callClaude({
+            systemPrompt: 'You are a helpful project assistant. Provide concise, practical elaborations for action items.',
+            messages: [{ role: 'user', content: prompt }],
+            options: {
+                model: 'claude-3-haiku-20240307',
+                max_tokens: 256
+            }
+        });
+
+        if (!response.success) {
+            throw new Error(response.error || 'Failed to generate elaboration');
+        }
+
+        item.elaboration = response.text.trim();
+        item.isExpanded = true;
+        elaborationArea.innerHTML = item.elaboration;
+        btn.textContent = 'Collapse';
+        btn.title = 'Hide details';
+        btn.classList.add('expanded');
+        await saveTodos();
+
+    } catch (error) {
+        console.error('Elaborate error:', error);
+        elaborationArea.innerHTML = `<span class="action-item-elaboration-error">Failed to generate: ${error.message}</span>`;
+        showToast(error.message, 'error');
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+function updateActionItem(id, updates) {
+    const todo = findTodoById(appState.currentTodoId);
+    if (!todo || !todo.actionItems) return;
+
+    const item = todo.actionItems.find(i => i.id === id);
+    if (!item) return;
+
+    Object.assign(item, updates);
+    saveTodos();
+}
+
+function deleteActionItem(id) {
+    const todo = findTodoById(appState.currentTodoId);
+    if (!todo || !todo.actionItems) return;
+
+    if (confirm('Delete this action item?')) {
+        todo.actionItems = todo.actionItems.filter(i => i.id !== id);
+        // Reorder remaining items
+        todo.actionItems.forEach((item, index) => {
+            item.order = index;
+        });
+        saveTodos();
+        renderActionItems();
+        showToast('Action item deleted', 'info');
+    }
+}
+
+function toggleActionItemComplete(id) {
+    const todo = findTodoById(appState.currentTodoId);
+    if (!todo || !todo.actionItems) return;
+
+    const item = todo.actionItems.find(i => i.id === id);
+    if (!item) return;
+
+    item.completed = !item.completed;
+    saveTodos();
+    renderActionItems();
 }
 
 // ===================================
@@ -944,150 +1266,70 @@ function navigateToView(viewName) {
 // BRAINSTORM VIEW
 // ===================================
 
-// Section prompts for Claude
-const SECTION_PROMPTS = {
-    goal: `You are an expert project architect helping a developer define their project goal. Your role is to understand the core problem they're trying to solve and help them articulate a clear, comprehensive goal statement.
+// Conversational brainstorm prompt
+const BRAINSTORM_PROMPT = `You're helping someone think through a project. Have a natural conversation - no rigid structure, no checklists.
 
-## CRITICAL RULE - ONE QUESTION AT A TIME:
-You must ONLY ask ONE question per response. Never ask multiple questions in a single message.
+CRITICAL RULE: Ask exactly ONE question per response. End your message after that single question. Do not ask follow-up questions in the same message.
 
-## Your Objectives:
-1. Understand the core problem: What problem is this project solving?
-2. Identify the target users: Who will use or benefit from this project?
-3. Clarify success criteria: What does success look like?
+BAD (never do this): "What's the main goal? And who's the target audience? Have you thought about the tech stack?"
+GOOD: "What's the main goal you're trying to achieve with this project?"
 
-## Process:
-1. Listen carefully to the user's initial description
-2. Ask ONE focused clarifying question at a time if needed
-3. When you have sufficient information, respond with:
+Your style:
+- Be conversational, not formulaic
+- Follow their lead - if they want to talk about tech first, go with it
+- Share thoughts and suggestions naturally
+- It's fine to explore tangents if they seem useful
 
-CONFIRMED: [A clear, comprehensive goal statement]
+Things worth understanding (explore one at a time through conversation):
+- What they're building and why
+- Who it's for
+- Technical approach
+- What's MVP vs later
+- Potential challenges
 
-The user will now provide their initial project idea. Help them refine it into a clear goal statement.`,
+Keep responses concise. One question only.`;
 
-    scope: `You are helping define project scope by distinguishing between MVP and Production features.
-
-## CRITICAL RULE - ONE QUESTION AT A TIME:
-You must ONLY ask ONE question per response.
-
-## Your Objectives:
-1. Identify core MVP features: What's absolutely necessary for the first usable version?
-2. Separate nice-to-have features: What can wait for future versions?
-
-## When ready, confirm with:
-
-CONFIRMED:
-**MVP Scope (Phase 1):**
-- [Core features]
-
-**Production Scope (Future Phases):**
-- [Enhancement features]`,
-
-    techstack: `You are helping choose the optimal tech stack for this project.
-
-## CRITICAL RULE - ONE QUESTION AT A TIME:
-You must ONLY ask ONE question per response.
-
-## Key Areas to Cover:
-- Frontend: Framework/library, UI components, styling
-- Backend: Server framework, language, API design
-- Database: Type and specific database
-- Infrastructure: Hosting, deployment
-
-## When ready, confirm with:
-
-CONFIRMED:
-**Frontend:** [Technology choice and rationale]
-**Backend:** [Technology choice and rationale]
-**Database:** [Technology choice and rationale]
-**Infrastructure:** [Technology choice and rationale]`,
-
-    phases: `You are creating a phased implementation plan for the project.
-
-## CRITICAL RULE - ONE QUESTION AT A TIME:
-You must ONLY ask ONE question per response.
-
-## Your Objectives:
-1. Break the project into logical phases that build incrementally
-2. Ensure each phase delivers value independently
-3. Identify dependencies between phases
-
-## When ready, structure the phases:
-
-CONFIRMED:
-**Phase 1: [Phase Name]**
-*Objective: [What this phase achieves]*
-Tasks:
-- [Specific, actionable tasks]
-
-**Phase 2: [Phase Name]**
-...`,
-
-    risks: `You are identifying potential risks and proposing mitigation strategies.
-
-## CRITICAL RULE - ONE QUESTION AT A TIME:
-You must ONLY ask ONE question per response.
-
-## Risk Categories:
-- Technical: Scalability, performance, complexity
-- Resource: Time, skills, availability
-- Dependency: External APIs, third-party services
-
-## When ready, document the risks:
-
-CONFIRMED:
-**Technical Risks:**
-**Risk: [Name]**
-- Impact: [High/Medium/Low]
-- Mitigation: [Strategy]
-
-**Resource Risks:**
-...`
-};
-
-function navigateToBrainstorm(todoId) {
+function navigateToBrainstorm(todoId, preserveConversation = false) {
     const todo = findTodoById(todoId);
     if (!todo) {
         showToast('Task not found', 'error');
         return;
     }
 
-    // Reset brainstorm state
-    appState.brainstorm = {
-        active: true,
-        currentSection: 1,
-        sections: [
-            { name: 'goal', title: 'Goal', description: 'What are you building? Describe the core problem you want to solve.', complete: false, data: null },
-            { name: 'scope', title: 'Scope', description: 'What features are in scope for MVP vs future versions?', complete: false, data: null },
-            { name: 'techstack', title: 'Tech Stack', description: 'What technologies will you use to build this?', complete: false, data: null },
-            { name: 'phases', title: 'Phases', description: 'How will you break down the implementation into phases?', complete: false, data: null },
-            { name: 'risks', title: 'Risks', description: 'What risks might affect the project and how will you mitigate them?', complete: false, data: null }
-        ],
-        conversations: {},
-        generatedMarkdown: null,
-        isProcessing: false,
-        showPreview: false
-    };
+    // Check if we should preserve existing conversation
+    if (preserveConversation && appState.brainstorm.conversation && appState.brainstorm.conversation.length > 0) {
+        // Keep existing conversation, just reset preview state
+        appState.brainstorm.active = true;
+        appState.brainstorm.showPreview = false;
+        appState.brainstorm.isProcessing = false;
+    } else {
+        // Reset brainstorm state - start fresh
+        appState.brainstorm = {
+            active: true,
+            conversation: [],
+            generatedMarkdown: null,
+            isProcessing: false,
+            showPreview: false
+        };
 
-    // Pre-fill Goal with task name and notes
-    if (todo.text || todo.notes) {
-        let goalContext = `Project: ${todo.text}`;
-        if (todo.notes) {
-            goalContext += `\n\nNotes:\n${todo.notes}`;
+        // Pre-fill with task context
+        let initialContext = '';
+        if (todo.text) {
+            initialContext = `Project: ${todo.text}`;
         }
-        appState.brainstorm.conversations[1] = [{
-            role: 'user',
-            content: goalContext
-        }];
-    }
+        if (todo.notes) {
+            initialContext += `\n\nNotes:\n${todo.notes}`;
+        }
+        if (todo.subtasks && todo.subtasks.length > 0) {
+            initialContext += '\n\nInitial tasks I have in mind:\n' + todo.subtasks.map(s => `- ${s.text}`).join('\n');
+        }
 
-    // Pre-fill Phases with subtasks
-    if (todo.subtasks && todo.subtasks.length > 0) {
-        const phasesText = 'Initial tasks/phases I have in mind:\n' + todo.subtasks.map(s => `- ${s.text}`).join('\n');
-        appState.brainstorm.conversations[4] = [{
-            role: 'user',
-            content: phasesText
-        }];
+        if (initialContext) {
+            appState.brainstorm.conversation.push({
+                role: 'user',
+                content: initialContext
+            });
+        }
     }
 
     // Update title
@@ -1099,81 +1341,61 @@ function navigateToBrainstorm(todoId) {
     appState.currentView = 'brainstorm';
     render();
 
-    // If we have pre-filled goal context, automatically send it
-    if (appState.brainstorm.conversations[1]) {
-        handleBrainstormSubmitAuto();
+    // If we have pre-filled context and starting fresh, start the conversation
+    if (!preserveConversation && appState.brainstorm.conversation.length > 0) {
+        processBrainstormMessage();
     }
 }
 
-async function handleBrainstormSubmitAuto() {
-    // Automatically process pre-filled content
-    await processBrainstormMessage();
+function showEditPlanDialog() {
+    const hasExistingConversation = appState.brainstorm.conversation && appState.brainstorm.conversation.length > 0;
+
+    if (!hasExistingConversation) {
+        // No existing conversation, just start fresh
+        navigateToBrainstorm(appState.currentTodoId, false);
+        return;
+    }
+
+    // Show dialog with options
+    const choice = confirm(
+        'How would you like to edit the plan?\n\n' +
+        'OK = Continue existing chat\n' +
+        'Cancel = Start fresh'
+    );
+
+    navigateToBrainstorm(appState.currentTodoId, choice);
 }
 
 function renderBrainstormView() {
     const bs = appState.brainstorm;
 
-    // Show wizard or preview
-    const wizardContainer = document.getElementById('bsWizardContainer');
+    const chatContainer = document.getElementById('bsChatContainer');
     const previewContainer = document.getElementById('bsPreviewContainer');
+    const loadingOverlay = document.getElementById('bsLoadingOverlay');
 
     if (bs.showPreview) {
-        wizardContainer.style.display = 'none';
+        chatContainer.style.display = 'none';
         previewContainer.style.display = 'block';
+        loadingOverlay.style.display = 'none';
         renderBrainstormPreview();
     } else {
-        wizardContainer.style.display = 'block';
+        chatContainer.style.display = 'flex';
         previewContainer.style.display = 'none';
-        renderBrainstormWizard();
+        renderBrainstormChat();
+
+        // Update button states
+        const submitBtn = document.getElementById('bsSubmitBtn');
+        const generateBtn = document.getElementById('bsGeneratePlanBtn');
+
+        submitBtn.disabled = bs.isProcessing;
+        submitBtn.textContent = bs.isProcessing ? 'Thinking...' : 'Send';
+
+        // Enable generate plan if there's been some conversation
+        generateBtn.disabled = bs.isProcessing || bs.conversation.length < 2;
+
+        // Show/hide loading overlay
+        loadingOverlay.style.display = bs.isProcessing ? 'flex' : 'none';
     }
-}
-
-function renderBrainstormWizard() {
-    const bs = appState.brainstorm;
-    const currentSection = bs.sections[bs.currentSection - 1];
-
-    // Update progress indicator
-    document.querySelectorAll('.bs-progress-step').forEach((step, index) => {
-        step.classList.remove('active', 'complete');
-        if (index < bs.currentSection - 1 || bs.sections[index].complete) {
-            step.classList.add('complete');
-        }
-        if (index === bs.currentSection - 1) {
-            step.classList.add('active');
-        }
-    });
-
-    // Update section header
-    document.getElementById('bsSectionTitle').textContent = currentSection.title;
-    document.getElementById('bsSectionDescription').textContent = currentSection.description;
-
-    // Render chat messages
-    renderBrainstormChat();
-
-    // Update navigation buttons
-    const backBtn = document.getElementById('bsBackBtn');
-    const nextBtn = document.getElementById('bsNextBtn');
-    const submitBtn = document.getElementById('bsSubmitBtn');
-
-    backBtn.disabled = bs.currentSection === 1;
-    nextBtn.disabled = !currentSection.complete;
-
-    // If all sections are complete, show "Generate Plan" instead of "Next"
-    const allComplete = bs.sections.every(s => s.complete);
-    if (allComplete) {
-        nextBtn.textContent = 'Generate Plan →';
-        nextBtn.disabled = false;
-    } else {
-        nextBtn.textContent = 'Next →';
-    }
-
-    // Disable submit while processing
-    submitBtn.disabled = bs.isProcessing;
-    submitBtn.textContent = bs.isProcessing ? 'Thinking...' : 'Send';
-
-    // Show/hide loading overlay
-    const loadingOverlay = document.getElementById('bsLoadingOverlay');
-    loadingOverlay.style.display = bs.isProcessing ? 'flex' : 'none';
 }
 
 function renderBrainstormChat() {
@@ -1181,17 +1403,14 @@ function renderBrainstormChat() {
     const chatContainer = document.getElementById('bsChatMessages');
     chatContainer.innerHTML = '';
 
-    const conversation = bs.conversations[bs.currentSection] || [];
-
-    if (conversation.length === 0) {
-        // Show initial prompt
+    if (bs.conversation.length === 0) {
         const welcomeMsg = document.createElement('div');
         welcomeMsg.className = 'bs-message bs-message-system';
-        welcomeMsg.textContent = `Let's work on the ${bs.sections[bs.currentSection - 1].title.toLowerCase()}. Type your thoughts below.`;
+        welcomeMsg.textContent = "What are you working on? Tell me about your project.";
         chatContainer.appendChild(welcomeMsg);
     }
 
-    conversation.forEach(msg => {
+    bs.conversation.forEach(msg => {
         const msgEl = document.createElement('div');
         msgEl.className = `bs-message bs-message-${msg.role === 'user' ? 'user' : 'assistant'}`;
         msgEl.textContent = msg.content;
@@ -1210,11 +1429,7 @@ async function handleBrainstormSubmit() {
 
     const bs = appState.brainstorm;
 
-    // Add user message to conversation
-    if (!bs.conversations[bs.currentSection]) {
-        bs.conversations[bs.currentSection] = [];
-    }
-    bs.conversations[bs.currentSection].push({
+    bs.conversation.push({
         role: 'user',
         content: text
     });
@@ -1228,42 +1443,21 @@ async function handleBrainstormSubmit() {
 async function processBrainstormMessage() {
     const bs = appState.brainstorm;
     bs.isProcessing = true;
-    renderBrainstormWizard();
+    renderBrainstormView();
 
     try {
-        // Check if Claude is available
         const claudeStatus = await window.electronAPI.checkClaudeAvailable();
         if (!claudeStatus.available) {
             throw new Error('Claude API not available. Please set ANTHROPIC_API_KEY environment variable.');
         }
 
-        // Build system prompt with context from previous sections
-        const currentSectionName = bs.sections[bs.currentSection - 1].name;
-        let systemPrompt = SECTION_PROMPTS[currentSectionName];
-
-        // Add context from completed sections
-        const contextParts = [];
-        bs.sections.forEach((section, index) => {
-            if (section.complete && section.data) {
-                contextParts.push(`## ${section.title}:\n${section.data}`);
-            }
-        });
-
-        if (contextParts.length > 0) {
-            systemPrompt += '\n\n## Context from Previous Sections:\n' + contextParts.join('\n\n');
-        }
-
-        // Get conversation messages
-        const messages = bs.conversations[bs.currentSection] || [];
-
-        // Call Claude API
         const response = await window.electronAPI.callClaude({
-            systemPrompt,
-            messages,
+            systemPrompt: BRAINSTORM_PROMPT,
+            messages: bs.conversation,
             options: {
                 model: 'claude-3-haiku-20240307',
                 max_tokens: 2048,
-                temperature: 0.7
+                temperature: 0.5
             }
         });
 
@@ -1271,71 +1465,24 @@ async function processBrainstormMessage() {
             throw new Error(response.error || 'Failed to get response from Claude');
         }
 
-        // Add assistant response to conversation
-        bs.conversations[bs.currentSection].push({
+        bs.conversation.push({
             role: 'assistant',
             content: response.text
         });
 
-        // Check if response contains CONFIRMED: marker
-        if (response.text.includes('CONFIRMED:')) {
-            bs.sections[bs.currentSection - 1].complete = true;
-            bs.sections[bs.currentSection - 1].data = response.text;
-
-            // Show success message
-            bs.conversations[bs.currentSection].push({
-                role: 'system',
-                content: `Section complete! You can proceed to the next section.`
-            });
-        }
-
     } catch (error) {
         console.error('Brainstorm error:', error);
         showToast(error.message, 'error');
-
-        // Add error to conversation
-        bs.conversations[bs.currentSection].push({
-            role: 'system',
-            content: `Error: ${error.message}`
-        });
     }
 
     bs.isProcessing = false;
-    renderBrainstormWizard();
-}
-
-function navigateBrainstormSection(direction) {
-    const bs = appState.brainstorm;
-
-    // Check if all sections are complete and we're going forward
-    const allComplete = bs.sections.every(s => s.complete);
-    if (direction === 1 && allComplete) {
-        generateBrainstormPlan();
-        return;
-    }
-
-    const newSection = bs.currentSection + direction;
-    if (newSection >= 1 && newSection <= 5) {
-        bs.currentSection = newSection;
-        renderBrainstormWizard();
-    }
-}
-
-function restartBrainstormSection() {
-    const bs = appState.brainstorm;
-
-    if (confirm('Are you sure you want to restart this section? Your conversation will be cleared.')) {
-        bs.sections[bs.currentSection - 1].complete = false;
-        bs.sections[bs.currentSection - 1].data = null;
-        bs.conversations[bs.currentSection] = [];
-        renderBrainstormWizard();
-    }
+    renderBrainstormView();
 }
 
 async function generateBrainstormPlan() {
     const bs = appState.brainstorm;
     bs.isProcessing = true;
-    renderBrainstormWizard();
+    renderBrainstormView();
 
     try {
         const claudeStatus = await window.electronAPI.checkClaudeAvailable();
@@ -1343,33 +1490,25 @@ async function generateBrainstormPlan() {
             throw new Error('Claude API not available.');
         }
 
-        // Build comprehensive prompt for final plan
-        const systemPrompt = `You are an expert technical writer. Generate a comprehensive, well-structured project plan in markdown format based on the brainstorming session data.
+        // Format conversation for the plan generator
+        const conversationText = bs.conversation.map(msg => {
+            const role = msg.role === 'user' ? 'User' : 'Assistant';
+            return `${role}: ${msg.content}`;
+        }).join('\n\n');
 
-Generate a markdown document with the following structure:
-# [Project Name]
-## Executive Summary
-## Goal
-## Scope (MVP vs Production)
-## Technical Architecture
-## Implementation Phases
-## Risk Management
-## Success Criteria
-## Next Steps
+        const systemPrompt = `Based on this brainstorming conversation, create a project plan in markdown.
 
-Make it actionable, clear, and optimized for an AI coding assistant to understand.`;
+Structure it naturally based on what was discussed - don't force sections that weren't covered. Include:
+- A clear summary of what's being built
+- Key decisions made
+- Next steps or phases if discussed
+- Any risks or considerations mentioned
 
-        // Compile all section data
-        let allContext = 'Here is the brainstorming session data:\n\n';
-        bs.sections.forEach(section => {
-            if (section.data) {
-                allContext += `### ${section.title}:\n${section.data}\n\n`;
-            }
-        });
+Keep it practical and actionable. This will be used by a developer (possibly with AI assistance) to build the project.`;
 
         const response = await window.electronAPI.callClaude({
             systemPrompt,
-            messages: [{ role: 'user', content: allContext }],
+            messages: [{ role: 'user', content: conversationText }],
             options: {
                 model: 'claude-3-haiku-20240307',
                 max_tokens: 4096,
@@ -1390,7 +1529,7 @@ Make it actionable, clear, and optimized for an AI coding assistant to understan
         console.error('Plan generation error:', error);
         showToast(error.message, 'error');
         bs.isProcessing = false;
-        renderBrainstormWizard();
+        renderBrainstormView();
     }
 }
 
@@ -1429,39 +1568,34 @@ function backToWizard() {
     renderBrainstormView();
 }
 
-async function exportAndSaveBrainstorm() {
-    const bs = appState.brainstorm;
+async function saveBrainstormToTask() {
     const todo = findTodoById(appState.currentTodoId);
+    if (!todo) {
+        showToast('Task not found', 'error');
+        return;
+    }
 
     const editor = document.getElementById('bsMarkdownEditor');
     const markdown = editor.value;
 
+    if (!markdown.trim()) {
+        showToast('Plan cannot be empty', 'error');
+        return;
+    }
+
     try {
-        // Generate filename
-        const safeName = (todo?.text || 'project').replace(/[^a-z0-9]/gi, '-').toLowerCase().substring(0, 30);
-        const filename = `${safeName}-plan-${new Date().toISOString().split('T')[0]}.md`;
+        // Save result to todo
+        todo.brainstormResult = markdown;
+        todo.stage = 'planning';
+        await saveTodos();
 
-        // Export to file
-        const result = await window.electronAPI.saveBrainstormFile(markdown, filename);
+        showToast('Plan saved successfully', 'success');
 
-        if (result.success) {
-            showToast('Project plan exported successfully', 'success');
-
-            // Save result to todo
-            if (todo) {
-                todo.brainstormResult = markdown;
-                todo.stage = 'planning';
-                await saveTodos();
-            }
-
-            // Return to detail view
-            exitBrainstorm();
-        } else if (!result.cancelled) {
-            throw new Error(result.error || 'Export failed');
-        }
+        // Return to detail view
+        exitBrainstorm();
     } catch (error) {
-        console.error('Export error:', error);
-        showToast(error.message, 'error');
+        console.error('Save error:', error);
+        showToast('Failed to save plan', 'error');
     }
 }
 
@@ -1556,9 +1690,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // Edit Plan button (in detail view for planning stage)
-    document.getElementById('editPlanBtn').addEventListener('click', () => {
-        navigateToBrainstorm(appState.currentTodoId);
-    });
+    document.getElementById('editPlanBtn').addEventListener('click', showEditPlanDialog);
+
+    // Generate Action Items button
+    document.getElementById('generateActionItemsBtn').addEventListener('click', generateActionItems);
 
     // Brainstorm View event listeners
     document.getElementById('backBtnBrainstorm').addEventListener('click', exitBrainstorm);
@@ -1571,24 +1706,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    document.getElementById('bsBackBtn').addEventListener('click', () => navigateBrainstormSection(-1));
-    document.getElementById('bsNextBtn').addEventListener('click', () => navigateBrainstormSection(1));
-    document.getElementById('bsRestartBtn').addEventListener('click', restartBrainstormSection);
-
-    // Progress step click handlers
-    document.querySelectorAll('.bs-progress-step').forEach((step, index) => {
-        step.addEventListener('click', () => {
-            const bs = appState.brainstorm;
-            // Only allow clicking on completed sections or the next section
-            if (index < bs.currentSection || bs.sections[index].complete || index === bs.currentSection - 1) {
-                bs.currentSection = index + 1;
-                renderBrainstormWizard();
-            }
-        });
-    });
+    document.getElementById('bsGeneratePlanBtn').addEventListener('click', generateBrainstormPlan);
 
     // Preview actions
-    document.getElementById('bsExportBtn').addEventListener('click', exportAndSaveBrainstorm);
+    document.getElementById('bsSaveBtn').addEventListener('click', saveBrainstormToTask);
     document.getElementById('bsBackToWizardBtn').addEventListener('click', backToWizard);
 
     // Live preview update
