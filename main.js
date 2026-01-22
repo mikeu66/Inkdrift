@@ -1,21 +1,80 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const Anthropic = require('@anthropic-ai/sdk');
 
+// Load environment variables from .env file
+require('dotenv').config();
 // Initialize Claude client (only if API key is available)
 let claudeClient = null;
-if (process.env.ANTHROPIC_API_KEY) {
-    claudeClient = new Anthropic({
-        apiKey: process.env.ANTHROPIC_API_KEY
-    });
+let Anthropic;
+try {
+    Anthropic = require('@anthropic-ai/sdk');
+} catch (e) {
+    console.error('CRITICAL: Failed to load @anthropic-ai/sdk:', e);
 }
 
-// Storage file path (using app.getPath for proper user data directory)
+// Claude client will be initialized after app is ready (needs access to userData path)
+// Storage file paths (using app.getPath for proper user data directory)
 const getStoragePath = () => {
     const userDataPath = app.getPath('userData');
     return path.join(userDataPath, 'todos.json');
 };
+
+const getSettingsPath = () => {
+    const userDataPath = app.getPath('userData');
+    return path.join(userDataPath, 'settings.json');
+};
+
+// Settings management
+function loadSettings() {
+    try {
+        const settingsPath = getSettingsPath();
+        if (fs.existsSync(settingsPath)) {
+            const data = fs.readFileSync(settingsPath, 'utf8');
+            return JSON.parse(data);
+        }
+    } catch (error) {
+        console.error('Error loading settings:', error);
+    }
+    return {};
+}
+
+function saveSettings(settings) {
+    try {
+        const settingsPath = getSettingsPath();
+        const dir = path.dirname(settingsPath);
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
+        return true;
+    } catch (error) {
+        console.error('Error saving settings:', error);
+        return false;
+    }
+}
+
+// Initialize Claude client from settings or environment
+function initializeClaudeClient() {
+    const settings = loadSettings();
+    const apiKey = settings.anthropicApiKey || process.env.ANTHROPIC_API_KEY;
+
+    if (apiKey && Anthropic) {
+        try {
+            claudeClient = new Anthropic({
+                apiKey: apiKey
+            });
+            console.log('Claude client initialized successfully');
+            return true;
+        } catch (e) {
+            console.error('Failed to initialize Anthropic client:', e);
+            claudeClient = null;
+            return false;
+        }
+    }
+    claudeClient = null;
+    return false;
+}
 
 // Validate todos data structure
 function validateTodos(todos) {
@@ -259,10 +318,89 @@ function setupIpcHandlers() {
 
     // Check if Claude API is available
     ipcMain.handle('check-claude-available', async () => {
+        const settings = loadSettings();
+        const hasStoredKey = !!settings.anthropicApiKey;
+        const hasEnvKey = !!process.env.ANTHROPIC_API_KEY;
         return {
             available: claudeClient !== null,
-            hasApiKey: !!process.env.ANTHROPIC_API_KEY
+            hasApiKey: hasStoredKey || hasEnvKey,
+            keySource: hasStoredKey ? 'settings' : (hasEnvKey ? 'environment' : 'none')
         };
+    });
+
+    // Get settings (without exposing sensitive data fully)
+    ipcMain.handle('get-settings', async () => {
+        const settings = loadSettings();
+        return {
+            hasApiKey: !!settings.anthropicApiKey,
+            apiKeyPreview: settings.anthropicApiKey
+                ? `${settings.anthropicApiKey.substring(0, 7)}...${settings.anthropicApiKey.slice(-4)}`
+                : null
+        };
+    });
+
+    // Save API key
+    ipcMain.handle('save-api-key', async (event, apiKey) => {
+        try {
+            // Validate API key format (basic check)
+            if (apiKey && typeof apiKey !== 'string') {
+                throw new Error('Invalid API key format');
+            }
+
+            const settings = loadSettings();
+
+            if (apiKey && apiKey.trim()) {
+                settings.anthropicApiKey = apiKey.trim();
+            } else {
+                delete settings.anthropicApiKey;
+            }
+
+            const saved = saveSettings(settings);
+            if (!saved) {
+                throw new Error('Failed to save settings');
+            }
+
+            // Reinitialize Claude client with new key
+            const initialized = initializeClaudeClient();
+
+            return {
+                success: true,
+                claudeAvailable: initialized
+            };
+        } catch (error) {
+            console.error('Error saving API key:', error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    });
+
+    // Test API key validity
+    ipcMain.handle('test-api-key', async (event, apiKey) => {
+        try {
+            if (!apiKey || !Anthropic) {
+                return { valid: false, error: 'No API key provided' };
+            }
+
+            // Create temporary client to test
+            const testClient = new Anthropic({ apiKey: apiKey.trim() });
+
+            // Make a minimal API call to verify the key works
+            const response = await testClient.messages.create({
+                model: 'claude-3-haiku-20240307',
+                max_tokens: 10,
+                messages: [{ role: 'user', content: 'Hi' }]
+            });
+
+            return { valid: true };
+        } catch (error) {
+            console.error('API key test failed:', error);
+            return {
+                valid: false,
+                error: error.message || 'Invalid API key'
+            };
+        }
     });
 
     // Save brainstorm result to markdown file
@@ -329,6 +467,9 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+    // Initialize Claude client from saved settings or environment
+    initializeClaudeClient();
+
     // Setup secure IPC handlers
     setupIpcHandlers();
 

@@ -15,6 +15,7 @@
         <div id="listView" class="view">
             <div class="header">
                 <h1>Tasks</h1>
+                <button id="settingsBtn" class="settings-btn" title="Settings">⚙️</button>
                 <button id="themeToggle" class="theme-toggle" title="Toggle theme">🌙</button>
             </div>
 
@@ -256,6 +257,69 @@
             <div id="bsLoadingOverlay" class="bs-loading-overlay" style="display: none;">
                 <div class="bs-loading-spinner"></div>
                 <p class="bs-loading-text">Thinking...</p>
+            </div>
+        </div>
+
+        <!-- Settings View -->
+        <div id="settingsView" class="view" style="display: none;">
+            <div class="detail-header">
+                <button id="backBtnSettings" class="back-btn">← Back</button>
+                <h2>Settings</h2>
+            </div>
+
+            <div class="settings-content">
+                <!-- API Key Section -->
+                <div class="settings-section">
+                    <div class="settings-section-header">
+                        <h3>Claude API Key</h3>
+                        <span id="apiKeyStatus" class="api-key-status"></span>
+                    </div>
+                    <p class="settings-description">
+                        Enter your Anthropic API key to enable AI-powered brainstorming, action item generation, and task elaboration features.
+                    </p>
+                    <p class="settings-description">
+                        Get your API key from <a href="#" id="anthropicLink" class="settings-link">console.anthropic.com</a>
+                    </p>
+
+                    <div class="api-key-input-section">
+                        <div class="api-key-input-container">
+                            <input
+                                type="password"
+                                id="apiKeyInput"
+                                class="api-key-input"
+                                placeholder="sk-ant-api..."
+                                autocomplete="off"
+                            />
+                            <button id="toggleApiKeyVisibility" class="toggle-visibility-btn" title="Show/hide API key">
+                                👁️
+                            </button>
+                        </div>
+                        <div class="api-key-buttons">
+                            <button id="testApiKeyBtn" class="test-api-key-btn">Test Key</button>
+                            <button id="saveApiKeyBtn" class="save-api-key-btn">Save Key</button>
+                        </div>
+                    </div>
+
+                    <div id="apiKeyMessage" class="api-key-message" style="display: none;"></div>
+
+                    <div id="currentKeyInfo" class="current-key-info" style="display: none;">
+                        <span class="current-key-label">Current key:</span>
+                        <span id="currentKeyPreview" class="current-key-preview"></span>
+                        <button id="removeApiKeyBtn" class="remove-api-key-btn">Remove</button>
+                    </div>
+                </div>
+
+                <!-- About Section -->
+                <div class="settings-section">
+                    <h3>About</h3>
+                    <div class="about-info">
+                        <p><strong>Todo App</strong></p>
+                        <p id="appVersionDisplay">Version: 1.0.0</p>
+                        <p class="about-description">
+                            A productivity app with AI-powered project planning and brainstorming capabilities.
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

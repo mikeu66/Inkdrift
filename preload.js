@@ -64,5 +64,24 @@ contextBridge.exposeInMainWorld('electronAPI', {
             throw new Error('Content must be a string');
         }
         return ipcRenderer.invoke('save-brainstorm-file', { content, suggestedFilename });
+    },
+
+    // Settings API
+    getSettings: () => {
+        return ipcRenderer.invoke('get-settings');
+    },
+
+    saveApiKey: (apiKey) => {
+        if (apiKey !== null && apiKey !== undefined && typeof apiKey !== 'string') {
+            throw new Error('API key must be a string or empty');
+        }
+        return ipcRenderer.invoke('save-api-key', apiKey);
+    },
+
+    testApiKey: (apiKey) => {
+        if (!apiKey || typeof apiKey !== 'string') {
+            throw new Error('API key must be a non-empty string');
+        }
+        return ipcRenderer.invoke('test-api-key', apiKey);
     }
 });

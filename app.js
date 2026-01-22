@@ -241,6 +241,9 @@ function render() {
     } else if (appState.currentView === 'brainstorm') {
         document.getElementById('brainstormView').style.display = 'block';
         renderBrainstormView();
+    } else if (appState.currentView === 'settings') {
+        document.getElementById('settingsView').style.display = 'block';
+        renderSettingsView();
     }
 }
 
@@ -1630,6 +1633,160 @@ function exitBrainstorm() {
 }
 
 // ===================================
+// SETTINGS VIEW
+// ===================================
+async function renderSettingsView() {
+    // Load current settings
+    const settings = await window.electronAPI.getSettings();
+    const claudeStatus = await window.electronAPI.checkClaudeAvailable();
+
+    // Update status badge
+    const statusEl = document.getElementById('apiKeyStatus');
+    if (claudeStatus.available) {
+        statusEl.textContent = 'Connected';
+        statusEl.className = 'api-key-status connected';
+    } else {
+        statusEl.textContent = 'Not configured';
+        statusEl.className = 'api-key-status not-configured';
+    }
+
+    // Show/hide current key info
+    const currentKeyInfo = document.getElementById('currentKeyInfo');
+    const currentKeyPreview = document.getElementById('currentKeyPreview');
+    if (settings.hasApiKey && settings.apiKeyPreview) {
+        currentKeyInfo.style.display = 'flex';
+        currentKeyPreview.textContent = settings.apiKeyPreview;
+    } else {
+        currentKeyInfo.style.display = 'none';
+    }
+
+    // Clear input and messages
+    document.getElementById('apiKeyInput').value = '';
+    hideApiKeyMessage();
+
+    // Load app version
+    try {
+        const version = await window.electronAPI.getAppVersion();
+        document.getElementById('appVersionDisplay').textContent = `Version: ${version}`;
+    } catch (e) {
+        // Ignore version errors
+    }
+}
+
+function showApiKeyMessage(message, type) {
+    const msgEl = document.getElementById('apiKeyMessage');
+    msgEl.textContent = message;
+    msgEl.className = `api-key-message ${type}`;
+    msgEl.style.display = 'flex';
+}
+
+function hideApiKeyMessage() {
+    const msgEl = document.getElementById('apiKeyMessage');
+    msgEl.style.display = 'none';
+}
+
+function toggleApiKeyVisibility() {
+    const input = document.getElementById('apiKeyInput');
+    const btn = document.getElementById('toggleApiKeyVisibility');
+    if (input.type === 'password') {
+        input.type = 'text';
+        btn.textContent = '🙈';
+    } else {
+        input.type = 'password';
+        btn.textContent = '👁️';
+    }
+}
+
+async function testApiKey() {
+    const input = document.getElementById('apiKeyInput');
+    const apiKey = input.value.trim();
+
+    if (!apiKey) {
+        showApiKeyMessage('Please enter an API key to test', 'error');
+        return;
+    }
+
+    // Disable buttons during test
+    const testBtn = document.getElementById('testApiKeyBtn');
+    const saveBtn = document.getElementById('saveApiKeyBtn');
+    testBtn.disabled = true;
+    saveBtn.disabled = true;
+    showApiKeyMessage('Testing API key...', 'loading');
+
+    try {
+        const result = await window.electronAPI.testApiKey(apiKey);
+        if (result.valid) {
+            showApiKeyMessage('API key is valid!', 'success');
+        } else {
+            showApiKeyMessage(`Invalid API key: ${result.error}`, 'error');
+        }
+    } catch (error) {
+        showApiKeyMessage(`Test failed: ${error.message}`, 'error');
+    } finally {
+        testBtn.disabled = false;
+        saveBtn.disabled = false;
+    }
+}
+
+async function saveApiKey() {
+    const input = document.getElementById('apiKeyInput');
+    const apiKey = input.value.trim();
+
+    if (!apiKey) {
+        showApiKeyMessage('Please enter an API key to save', 'error');
+        return;
+    }
+
+    // Disable buttons during save
+    const testBtn = document.getElementById('testApiKeyBtn');
+    const saveBtn = document.getElementById('saveApiKeyBtn');
+    testBtn.disabled = true;
+    saveBtn.disabled = true;
+    showApiKeyMessage('Saving API key...', 'loading');
+
+    try {
+        const result = await window.electronAPI.saveApiKey(apiKey);
+        if (result.success) {
+            showApiKeyMessage('API key saved successfully!', 'success');
+            input.value = '';
+            // Re-render to update status
+            setTimeout(() => renderSettingsView(), 1000);
+        } else {
+            showApiKeyMessage(`Failed to save: ${result.error}`, 'error');
+        }
+    } catch (error) {
+        showApiKeyMessage(`Save failed: ${error.message}`, 'error');
+    } finally {
+        testBtn.disabled = false;
+        saveBtn.disabled = false;
+    }
+}
+
+async function removeApiKey() {
+    if (!confirm('Are you sure you want to remove your API key? AI features will be disabled.')) {
+        return;
+    }
+
+    try {
+        const result = await window.electronAPI.saveApiKey(null);
+        if (result.success) {
+            showToast('API key removed', 'info');
+            renderSettingsView();
+        } else {
+            showToast('Failed to remove API key', 'error');
+        }
+    } catch (error) {
+        showToast(`Error: ${error.message}`, 'error');
+    }
+}
+
+function openAnthropicConsole(e) {
+    e.preventDefault();
+    // Use shell.openExternal in Electron or fallback
+    window.open('https://console.anthropic.com/', '_blank');
+}
+
+// ===================================
 // EVENT LISTENERS
 // ===================================
 document.addEventListener('DOMContentLoaded', async () => {
@@ -1744,4 +1901,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Trash View
     document.getElementById('backBtnTrash').addEventListener('click', () => navigateToView('list'));
     document.getElementById('emptyTrashBtn').addEventListener('click', emptyTrash);
+
+    // Settings View
+    document.getElementById('settingsBtn').addEventListener('click', () => navigateToView('settings'));
+    document.getElementById('backBtnSettings').addEventListener('click', () => navigateToView('list'));
+    document.getElementById('toggleApiKeyVisibility').addEventListener('click', toggleApiKeyVisibility);
+    document.getElementById('testApiKeyBtn').addEventListener('click', testApiKey);
+    document.getElementById('saveApiKeyBtn').addEventListener('click', saveApiKey);
+    document.getElementById('removeApiKeyBtn').addEventListener('click', removeApiKey);
+    document.getElementById('anthropicLink').addEventListener('click', openAnthropicConsole);
 });
