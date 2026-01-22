@@ -7,6 +7,7 @@ let appState = {
     currentTodoId: null,
     editingId: null,
     theme: 'dark',
+    claudeAvailable: false,
     brainstorm: {
         active: false,
         currentSection: 1,
@@ -145,6 +146,21 @@ function toggleTheme() {
     appState.theme = newTheme;
     localStorage.setItem('theme', newTheme);
     applyTheme(newTheme);
+}
+
+// ===================================
+// CLAUDE AVAILABILITY
+// ===================================
+async function checkClaudeAvailability() {
+    try {
+        const status = await window.electronAPI.checkClaudeAvailable();
+        appState.claudeAvailable = status.available;
+        return status.available;
+    } catch (error) {
+        console.error('Failed to check Claude availability:', error);
+        appState.claudeAvailable = false;
+        return false;
+    }
 }
 
 // ===================================
@@ -542,7 +558,21 @@ function renderDetailView() {
     // Brainstorm button - only show during brainstorm phase
     const brainstormBtn = document.getElementById('brainstormBtn');
     const currentStage = todo.stage || 'brainstorm';
-    brainstormBtn.style.display = currentStage === 'brainstorm' ? 'block' : 'none';
+
+    if (currentStage === 'brainstorm') {
+        brainstormBtn.style.display = 'block';
+        if (appState.claudeAvailable) {
+            brainstormBtn.disabled = false;
+            brainstormBtn.textContent = 'Start Brainstorming';
+            brainstormBtn.classList.remove('ai-disabled');
+        } else {
+            brainstormBtn.disabled = true;
+            brainstormBtn.textContent = 'Configure API Key in Settings to Enable';
+            brainstormBtn.classList.add('ai-disabled');
+        }
+    } else {
+        brainstormBtn.style.display = 'none';
+    }
 
     // Planning result section - show when in planning stage with brainstorm result
     const planningResultSection = document.getElementById('planningResultSection');
@@ -788,7 +818,19 @@ function renderActionItems() {
     if (!todo) return;
 
     const actionItemsList = document.getElementById('actionItemsList');
+    const generateBtn = document.getElementById('generateActionItemsBtn');
     actionItemsList.innerHTML = '';
+
+    // Update generate button based on Claude availability
+    if (appState.claudeAvailable) {
+        generateBtn.disabled = false;
+        generateBtn.textContent = 'Generate Action Items';
+        generateBtn.classList.remove('ai-disabled');
+    } else {
+        generateBtn.disabled = true;
+        generateBtn.textContent = 'Configure API Key to Generate';
+        generateBtn.classList.add('ai-disabled');
+    }
 
     // Ensure actionItems array exists
     if (!todo.actionItems) {
@@ -798,7 +840,11 @@ function renderActionItems() {
     if (todo.actionItems.length === 0) {
         const emptyMsg = document.createElement('li');
         emptyMsg.className = 'action-item-empty';
-        emptyMsg.textContent = 'No action items yet. Click "Generate Action Items" to create them from your project plan.';
+        if (appState.claudeAvailable) {
+            emptyMsg.textContent = 'No action items yet. Click "Generate Action Items" to create them from your project plan.';
+        } else {
+            emptyMsg.textContent = 'Configure your API key in Settings to generate action items from your project plan.';
+        }
         actionItemsList.appendChild(emptyMsg);
         return;
     }
@@ -878,8 +924,24 @@ function createActionItemElement(item, index) {
     // Elaborate button
     const elaborateBtn = document.createElement('button');
     elaborateBtn.className = `action-item-elaborate-btn ${item.isExpanded ? 'expanded' : ''}`;
-    elaborateBtn.textContent = item.isExpanded ? 'Collapse' : 'Elaborate';
-    elaborateBtn.title = item.isExpanded ? 'Hide details' : 'Show detailed summary';
+
+    // If item has elaboration, allow expand/collapse regardless of Claude availability
+    // Otherwise, only enable if Claude is available
+    const hasElaboration = item.elaboration && item.elaboration.trim();
+    const canElaborate = hasElaboration || appState.claudeAvailable;
+
+    if (canElaborate) {
+        elaborateBtn.disabled = false;
+        elaborateBtn.textContent = item.isExpanded ? 'Collapse' : 'Elaborate';
+        elaborateBtn.title = item.isExpanded ? 'Hide details' : 'Show detailed summary';
+        elaborateBtn.classList.remove('ai-disabled');
+    } else {
+        elaborateBtn.disabled = true;
+        elaborateBtn.textContent = 'API Key Required';
+        elaborateBtn.title = 'Configure API key in Settings to enable elaboration';
+        elaborateBtn.classList.add('ai-disabled');
+    }
+
     elaborateBtn.addEventListener('click', () => elaborateActionItem(item.id, elaborateBtn, elaborationArea));
 
     // Delete button
@@ -1749,6 +1811,8 @@ async function saveApiKey() {
         if (result.success) {
             showApiKeyMessage('API key saved successfully!', 'success');
             input.value = '';
+            // Update Claude availability state
+            await checkClaudeAvailability();
             // Re-render to update status
             setTimeout(() => renderSettingsView(), 1000);
         } else {
@@ -1771,6 +1835,8 @@ async function removeApiKey() {
         const result = await window.electronAPI.saveApiKey(null);
         if (result.success) {
             showToast('API key removed', 'info');
+            // Update Claude availability state
+            await checkClaudeAvailability();
             renderSettingsView();
         } else {
             showToast('Failed to remove API key', 'error');
@@ -1792,6 +1858,9 @@ function openAnthropicConsole(e) {
 document.addEventListener('DOMContentLoaded', async () => {
     // Load theme
     loadTheme();
+
+    // Check Claude API availability
+    await checkClaudeAvailability();
 
     // Load todos from backend
     await loadTodos();

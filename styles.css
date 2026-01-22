@@ -2944,3 +2944,60 @@ input[type="checkbox"] {
 [data-theme="light"] .current-key-preview {
     background: rgba(0, 0, 0, 0.05);
 }
+
+/* ===================================
+   AI FEATURE DISABLED STATES
+   =================================== */
+
+/* Disabled AI button base style */
+.ai-disabled {
+    opacity: 0.6;
+    cursor: not-allowed !important;
+    position: relative;
+}
+
+/* Brainstorm button disabled state */
+.brainstorm-btn.ai-disabled {
+    background: linear-gradient(135deg, #4A4A6A, #5A5A7A, #4A4A6A);
+    box-shadow: none;
+}
+
+.brainstorm-btn.ai-disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+/* Generate Action Items button disabled state */
+.generate-action-items-btn.ai-disabled {
+    background: linear-gradient(135deg, #4A4A6A, #5A5A7A);
+    box-shadow: none;
+}
+
+.generate-action-items-btn.ai-disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+/* Elaborate button disabled state */
+.action-item-elaborate-btn.ai-disabled {
+    background: rgba(74, 74, 106, 0.2);
+    border-color: rgba(74, 74, 106, 0.3);
+    color: var(--text-muted);
+}
+
+.action-item-elaborate-btn.ai-disabled:hover {
+    background: rgba(74, 74, 106, 0.2);
+    border-color: rgba(74, 74, 106, 0.3);
+    color: var(--text-muted);
+}
+
+/* Light mode disabled states */
+[data-theme="light"] .brainstorm-btn.ai-disabled,
+[data-theme="light"] .generate-action-items-btn.ai-disabled {
+    background: linear-gradient(135deg, #A0A0B0, #B0B0C0);
+}
+
+[data-theme="light"] .action-item-elaborate-btn.ai-disabled {
+    background: rgba(160, 160, 176, 0.3);
+    border-color: rgba(160, 160, 176, 0.4);
+}
