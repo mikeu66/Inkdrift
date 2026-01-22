@@ -1715,9 +1715,18 @@ async function renderSettingsView() {
     // Show/hide current key info
     const currentKeyInfo = document.getElementById('currentKeyInfo');
     const currentKeyPreview = document.getElementById('currentKeyPreview');
+    const encryptionStatus = document.getElementById('encryptionStatus');
     if (settings.hasApiKey && settings.apiKeyPreview) {
         currentKeyInfo.style.display = 'flex';
         currentKeyPreview.textContent = settings.apiKeyPreview;
+        // Show encryption status
+        if (settings.isEncrypted) {
+            encryptionStatus.textContent = '🔒 Encrypted';
+            encryptionStatus.className = 'encryption-status encrypted';
+        } else {
+            encryptionStatus.textContent = '⚠️ Not encrypted';
+            encryptionStatus.className = 'encryption-status not-encrypted';
+        }
     } else {
         currentKeyInfo.style.display = 'none';
     }

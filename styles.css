@@ -2887,6 +2887,26 @@ input[type="checkbox"] {
     color: var(--text-white);
 }
 
+/* Encryption Status Badge */
+.encryption-status {
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.encryption-status.encrypted {
+    background: rgba(31, 122, 107, 0.2);
+    color: var(--accent-success);
+    border: 1px solid rgba(31, 122, 107, 0.3);
+}
+
+.encryption-status.not-encrypted {
+    background: rgba(180, 83, 9, 0.2);
+    color: var(--accent-warning);
+    border: 1px solid rgba(180, 83, 9, 0.3);
+}
+
 /* About Section */
 .about-info {
     color: var(--text-secondary);

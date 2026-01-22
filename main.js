@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, safeStorage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -25,7 +25,99 @@ const getSettingsPath = () => {
     return path.join(userDataPath, 'settings.json');
 };
 
-// Settings management
+const getSecureKeyPath = () => {
+    const userDataPath = app.getPath('userData');
+    return path.join(userDataPath, 'secure-key.bin');
+};
+
+// Secure API Key Storage using Electron's safeStorage
+function saveApiKeySecure(apiKey) {
+    try {
+        if (!safeStorage.isEncryptionAvailable()) {
+            console.warn('Secure storage not available, falling back to basic storage');
+            return false;
+        }
+
+        const secureKeyPath = getSecureKeyPath();
+        const dir = path.dirname(secureKeyPath);
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+
+        const encrypted = safeStorage.encryptString(apiKey);
+        fs.writeFileSync(secureKeyPath, encrypted);
+        console.log('API key saved securely using OS encryption');
+        return true;
+    } catch (error) {
+        console.error('Error saving API key securely:', error);
+        return false;
+    }
+}
+
+function loadApiKeySecure() {
+    try {
+        const secureKeyPath = getSecureKeyPath();
+        if (!fs.existsSync(secureKeyPath)) {
+            return null;
+        }
+
+        if (!safeStorage.isEncryptionAvailable()) {
+            console.warn('Secure storage not available for decryption');
+            return null;
+        }
+
+        const encrypted = fs.readFileSync(secureKeyPath);
+        const decrypted = safeStorage.decryptString(encrypted);
+        return decrypted;
+    } catch (error) {
+        console.error('Error loading API key securely:', error);
+        return null;
+    }
+}
+
+function removeApiKeySecure() {
+    try {
+        const secureKeyPath = getSecureKeyPath();
+        if (fs.existsSync(secureKeyPath)) {
+            fs.unlinkSync(secureKeyPath);
+            console.log('Secure API key removed');
+        }
+        return true;
+    } catch (error) {
+        console.error('Error removing secure API key:', error);
+        return false;
+    }
+}
+
+// Migrate from old plain-text storage to secure storage
+function migrateApiKeyToSecureStorage() {
+    try {
+        const settingsPath = getSettingsPath();
+        if (!fs.existsSync(settingsPath)) {
+            return;
+        }
+
+        const data = fs.readFileSync(settingsPath, 'utf8');
+        const settings = JSON.parse(data);
+
+        // Check if there's an old plain-text API key
+        if (settings.anthropicApiKey) {
+            console.log('Migrating API key to secure storage...');
+            const migrated = saveApiKeySecure(settings.anthropicApiKey);
+
+            if (migrated) {
+                // Remove the plain-text key from settings
+                delete settings.anthropicApiKey;
+                fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
+                console.log('API key migration complete - plain text key removed');
+            }
+        }
+    } catch (error) {
+        console.error('Error during API key migration:', error);
+    }
+}
+
+// Settings management (for non-sensitive settings)
 function loadSettings() {
     try {
         const settingsPath = getSettingsPath();
@@ -46,7 +138,10 @@ function saveSettings(settings) {
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir, { recursive: true });
         }
-        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
+        // Ensure API key is never saved in plain text settings
+        const safeSettings = { ...settings };
+        delete safeSettings.anthropicApiKey;
+        fs.writeFileSync(settingsPath, JSON.stringify(safeSettings, null, 2), 'utf8');
         return true;
     } catch (error) {
         console.error('Error saving settings:', error);
@@ -54,10 +149,10 @@ function saveSettings(settings) {
     }
 }
 
-// Initialize Claude client from settings or environment
+// Initialize Claude client from secure storage or environment
 function initializeClaudeClient() {
-    const settings = loadSettings();
-    const apiKey = settings.anthropicApiKey || process.env.ANTHROPIC_API_KEY;
+    // Try secure storage first, then fall back to environment variable
+    const apiKey = loadApiKeySecure() || process.env.ANTHROPIC_API_KEY;
 
     if (apiKey && Anthropic) {
         try {
@@ -318,28 +413,30 @@ function setupIpcHandlers() {
 
     // Check if Claude API is available
     ipcMain.handle('check-claude-available', async () => {
-        const settings = loadSettings();
-        const hasStoredKey = !!settings.anthropicApiKey;
+        const secureKey = loadApiKeySecure();
+        const hasSecureKey = !!secureKey;
         const hasEnvKey = !!process.env.ANTHROPIC_API_KEY;
         return {
             available: claudeClient !== null,
-            hasApiKey: hasStoredKey || hasEnvKey,
-            keySource: hasStoredKey ? 'settings' : (hasEnvKey ? 'environment' : 'none')
+            hasApiKey: hasSecureKey || hasEnvKey,
+            keySource: hasSecureKey ? 'secure' : (hasEnvKey ? 'environment' : 'none'),
+            isEncrypted: hasSecureKey && safeStorage.isEncryptionAvailable()
         };
     });
 
     // Get settings (without exposing sensitive data fully)
     ipcMain.handle('get-settings', async () => {
-        const settings = loadSettings();
+        const secureKey = loadApiKeySecure();
         return {
-            hasApiKey: !!settings.anthropicApiKey,
-            apiKeyPreview: settings.anthropicApiKey
-                ? `${settings.anthropicApiKey.substring(0, 7)}...${settings.anthropicApiKey.slice(-4)}`
-                : null
+            hasApiKey: !!secureKey,
+            apiKeyPreview: secureKey
+                ? `${secureKey.substring(0, 7)}...${secureKey.slice(-4)}`
+                : null,
+            isEncrypted: safeStorage.isEncryptionAvailable()
         };
     });
 
-    // Save API key
+    // Save API key (uses secure storage)
     ipcMain.handle('save-api-key', async (event, apiKey) => {
         try {
             // Validate API key format (basic check)
@@ -347,17 +444,15 @@ function setupIpcHandlers() {
                 throw new Error('Invalid API key format');
             }
 
-            const settings = loadSettings();
-
             if (apiKey && apiKey.trim()) {
-                settings.anthropicApiKey = apiKey.trim();
+                // Save to secure storage
+                const saved = saveApiKeySecure(apiKey.trim());
+                if (!saved) {
+                    throw new Error('Failed to save API key securely. Encryption may not be available.');
+                }
             } else {
-                delete settings.anthropicApiKey;
-            }
-
-            const saved = saveSettings(settings);
-            if (!saved) {
-                throw new Error('Failed to save settings');
+                // Remove from secure storage
+                removeApiKeySecure();
             }
 
             // Reinitialize Claude client with new key
@@ -365,7 +460,8 @@ function setupIpcHandlers() {
 
             return {
                 success: true,
-                claudeAvailable: initialized
+                claudeAvailable: initialized,
+                isEncrypted: safeStorage.isEncryptionAvailable()
             };
         } catch (error) {
             console.error('Error saving API key:', error);
@@ -467,7 +563,10 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
-    // Initialize Claude client from saved settings or environment
+    // Migrate any existing plain-text API keys to secure storage
+    migrateApiKeyToSecureStorage();
+
+    // Initialize Claude client from secure storage or environment
     initializeClaudeClient();
 
     // Setup secure IPC handlers
