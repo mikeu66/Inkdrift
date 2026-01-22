@@ -2433,11 +2433,12 @@ input[type="checkbox"] {
 }
 
 .action-item-elaboration.expanded {
-    max-height: 200px;
+    max-height: 400px;
     opacity: 1;
     padding: var(--space-md);
     border-color: rgba(147, 51, 234, 0.2);
     background: rgba(107, 33, 168, 0.1);
+    overflow-y: auto;
 }
 
 .action-item-elaboration-loading {
@@ -2457,6 +2458,68 @@ input[type="checkbox"] {
 .action-item-elaboration-error {
     color: var(--accent-error);
     font-style: italic;
+}
+
+/* Elaboration Markdown Content Styles */
+.action-item-elaboration h1,
+.action-item-elaboration h2,
+.action-item-elaboration h3,
+.action-item-elaboration h4 {
+    color: var(--text-primary);
+    margin-top: var(--space-md);
+    margin-bottom: var(--space-sm);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.action-item-elaboration h1:first-child,
+.action-item-elaboration h2:first-child,
+.action-item-elaboration h3:first-child,
+.action-item-elaboration p:first-child {
+    margin-top: 0;
+}
+
+.action-item-elaboration p {
+    margin-bottom: var(--space-sm);
+    color: var(--text-secondary);
+}
+
+.action-item-elaboration p:last-child {
+    margin-bottom: 0;
+}
+
+.action-item-elaboration ul,
+.action-item-elaboration ol {
+    margin: var(--space-sm) 0;
+    padding-left: var(--space-lg);
+    color: var(--text-secondary);
+}
+
+.action-item-elaboration li {
+    margin-bottom: var(--space-xs);
+    line-height: 1.5;
+}
+
+.action-item-elaboration li:last-child {
+    margin-bottom: 0;
+}
+
+.action-item-elaboration strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.action-item-elaboration code {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+.action-item-elaboration hr {
+    border: none;
+    border-top: 1px solid rgba(147, 51, 234, 0.2);
+    margin: var(--space-md) 0;
 }
 
 /* Light mode action items */
@@ -2509,4 +2572,8 @@ input[type="checkbox"] {
 [data-theme="light"] .action-item-elaboration.expanded {
     background: rgba(147, 51, 234, 0.08);
     border-color: rgba(147, 51, 234, 0.2);
+}
+
+[data-theme="light"] .action-item-elaboration code {
+    background: rgba(0, 0, 0, 0.08);
 }

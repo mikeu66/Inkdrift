@@ -898,13 +898,29 @@ function createActionItemElement(item, index) {
     elaborationArea.className = `action-item-elaboration ${item.isExpanded ? 'expanded' : ''}`;
 
     if (item.elaboration) {
-        elaborationArea.innerHTML = item.elaboration;
+        elaborationArea.innerHTML = renderElaborationMarkdown(item.elaboration);
     }
 
     container.appendChild(li);
     container.appendChild(elaborationArea);
 
     return container;
+}
+
+function renderElaborationMarkdown(text) {
+    try {
+        if (typeof marked !== 'undefined') {
+            marked.setOptions({
+                breaks: true,
+                gfm: true
+            });
+            return marked.parse(text);
+        }
+    } catch (error) {
+        console.error('Markdown parse error:', error);
+    }
+    // Fallback: basic formatting
+    return `<p>${text.replace(/\n/g, '<br>')}</p>`;
 }
 
 async function elaborateActionItem(id, btn, elaborationArea) {
@@ -948,7 +964,7 @@ async function elaborateActionItem(id, btn, elaborationArea) {
             throw new Error('Claude API not available');
         }
 
-        const prompt = `Based on this project plan context and the specific action item, provide a brief but helpful elaboration (2-4 sentences) explaining what this task involves, any key considerations, and practical tips for completing it.
+        const prompt = `Based on this project plan context and the specific action item, provide a helpful elaboration in markdown format.
 
 Project Plan:
 ${todo.brainstormResult}
@@ -956,14 +972,21 @@ ${todo.brainstormResult}
 Action Item: "${item.text}"
 Estimated Hours: ${item.hoursNeeded}
 
-Provide a concise, actionable summary. No markdown formatting, just plain text.`;
+Format your response as follows:
+1. **Summary** - A brief overview of what this task involves. Be concise for simple tasks, more detailed for complex ones.
+2. **Key Considerations** - A bulleted list of important points. Include only what's relevant (could be 2-5 points depending on complexity).
+3. **Optional sections** (only include if relevant to this specific task):
+   - **Prerequisites** - If there are dependencies or things that must be done first
+   - **Watch Out For** - Potential gotchas, common mistakes, or blockers
+
+Adapt the detail level to the task complexity. Simple tasks get brief elaborations; complex tasks get thorough breakdowns.`;
 
         const response = await window.electronAPI.callClaude({
-            systemPrompt: 'You are a helpful project assistant. Provide concise, practical elaborations for action items.',
+            systemPrompt: 'You are a helpful project assistant. Provide practical, well-structured elaborations for action items. Be concise where appropriate and thorough where needed.',
             messages: [{ role: 'user', content: prompt }],
             options: {
                 model: 'claude-3-haiku-20240307',
-                max_tokens: 256
+                max_tokens: 512
             }
         });
 
@@ -973,7 +996,7 @@ Provide a concise, actionable summary. No markdown formatting, just plain text.`
 
         item.elaboration = response.text.trim();
         item.isExpanded = true;
-        elaborationArea.innerHTML = item.elaboration;
+        elaborationArea.innerHTML = renderElaborationMarkdown(item.elaboration);
         btn.textContent = 'Collapse';
         btn.title = 'Hide details';
         btn.classList.add('expanded');
