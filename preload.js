@@ -26,5 +26,62 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Utility functions
     getAppVersion: () => {
         return ipcRenderer.invoke('get-app-version');
+    },
+
+    // Export/Import operations
+    exportTodos: (todos) => {
+        if (!Array.isArray(todos)) {
+            throw new Error('Todos must be an array');
+        }
+        return ipcRenderer.invoke('export-todos', todos);
+    },
+
+    importTodos: () => {
+        return ipcRenderer.invoke('import-todos');
+    },
+
+    // Brainstorming API
+    callClaude: (params) => {
+        // Validate params structure
+        if (!params || typeof params !== 'object') {
+            throw new Error('Invalid params: must be an object');
+        }
+        if (!params.systemPrompt || typeof params.systemPrompt !== 'string') {
+            throw new Error('Invalid params: systemPrompt must be a string');
+        }
+        if (!Array.isArray(params.messages)) {
+            throw new Error('Invalid params: messages must be an array');
+        }
+        return ipcRenderer.invoke('call-claude', params);
+    },
+
+    checkClaudeAvailable: () => {
+        return ipcRenderer.invoke('check-claude-available');
+    },
+
+    saveBrainstormFile: (content, suggestedFilename) => {
+        if (typeof content !== 'string') {
+            throw new Error('Content must be a string');
+        }
+        return ipcRenderer.invoke('save-brainstorm-file', { content, suggestedFilename });
+    },
+
+    // Settings API
+    getSettings: () => {
+        return ipcRenderer.invoke('get-settings');
+    },
+
+    saveApiKey: (apiKey) => {
+        if (apiKey !== null && apiKey !== undefined && typeof apiKey !== 'string') {
+            throw new Error('API key must be a string or empty');
+        }
+        return ipcRenderer.invoke('save-api-key', apiKey);
+    },
+
+    testApiKey: (apiKey) => {
+        if (!apiKey || typeof apiKey !== 'string') {
+            throw new Error('API key must be a non-empty string');
+        }
+        return ipcRenderer.invoke('test-api-key', apiKey);
     }
 });

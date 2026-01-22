@@ -1,12 +1,175 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, safeStorage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
-// Storage file path (using app.getPath for proper user data directory)
+// Load environment variables from .env file
+require('dotenv').config();
+// Initialize Claude client (only if API key is available)
+let claudeClient = null;
+let Anthropic;
+try {
+    Anthropic = require('@anthropic-ai/sdk');
+} catch (e) {
+    console.error('CRITICAL: Failed to load @anthropic-ai/sdk:', e);
+}
+
+// Claude client will be initialized after app is ready (needs access to userData path)
+// Storage file paths (using app.getPath for proper user data directory)
 const getStoragePath = () => {
     const userDataPath = app.getPath('userData');
     return path.join(userDataPath, 'todos.json');
 };
+
+const getSettingsPath = () => {
+    const userDataPath = app.getPath('userData');
+    return path.join(userDataPath, 'settings.json');
+};
+
+const getSecureKeyPath = () => {
+    const userDataPath = app.getPath('userData');
+    return path.join(userDataPath, 'secure-key.bin');
+};
+
+// Secure API Key Storage using Electron's safeStorage
+function saveApiKeySecure(apiKey) {
+    try {
+        if (!safeStorage.isEncryptionAvailable()) {
+            console.warn('Secure storage not available, falling back to basic storage');
+            return false;
+        }
+
+        const secureKeyPath = getSecureKeyPath();
+        const dir = path.dirname(secureKeyPath);
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+
+        const encrypted = safeStorage.encryptString(apiKey);
+        fs.writeFileSync(secureKeyPath, encrypted);
+        console.log('API key saved securely using OS encryption');
+        return true;
+    } catch (error) {
+        console.error('Error saving API key securely:', error);
+        return false;
+    }
+}
+
+function loadApiKeySecure() {
+    try {
+        const secureKeyPath = getSecureKeyPath();
+        if (!fs.existsSync(secureKeyPath)) {
+            return null;
+        }
+
+        if (!safeStorage.isEncryptionAvailable()) {
+            console.warn('Secure storage not available for decryption');
+            return null;
+        }
+
+        const encrypted = fs.readFileSync(secureKeyPath);
+        const decrypted = safeStorage.decryptString(encrypted);
+        return decrypted;
+    } catch (error) {
+        console.error('Error loading API key securely:', error);
+        return null;
+    }
+}
+
+function removeApiKeySecure() {
+    try {
+        const secureKeyPath = getSecureKeyPath();
+        if (fs.existsSync(secureKeyPath)) {
+            fs.unlinkSync(secureKeyPath);
+            console.log('Secure API key removed');
+        }
+        return true;
+    } catch (error) {
+        console.error('Error removing secure API key:', error);
+        return false;
+    }
+}
+
+// Migrate from old plain-text storage to secure storage
+function migrateApiKeyToSecureStorage() {
+    try {
+        const settingsPath = getSettingsPath();
+        if (!fs.existsSync(settingsPath)) {
+            return;
+        }
+
+        const data = fs.readFileSync(settingsPath, 'utf8');
+        const settings = JSON.parse(data);
+
+        // Check if there's an old plain-text API key
+        if (settings.anthropicApiKey) {
+            console.log('Migrating API key to secure storage...');
+            const migrated = saveApiKeySecure(settings.anthropicApiKey);
+
+            if (migrated) {
+                // Remove the plain-text key from settings
+                delete settings.anthropicApiKey;
+                fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
+                console.log('API key migration complete - plain text key removed');
+            }
+        }
+    } catch (error) {
+        console.error('Error during API key migration:', error);
+    }
+}
+
+// Settings management (for non-sensitive settings)
+function loadSettings() {
+    try {
+        const settingsPath = getSettingsPath();
+        if (fs.existsSync(settingsPath)) {
+            const data = fs.readFileSync(settingsPath, 'utf8');
+            return JSON.parse(data);
+        }
+    } catch (error) {
+        console.error('Error loading settings:', error);
+    }
+    return {};
+}
+
+function saveSettings(settings) {
+    try {
+        const settingsPath = getSettingsPath();
+        const dir = path.dirname(settingsPath);
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+        // Ensure API key is never saved in plain text settings
+        const safeSettings = { ...settings };
+        delete safeSettings.anthropicApiKey;
+        fs.writeFileSync(settingsPath, JSON.stringify(safeSettings, null, 2), 'utf8');
+        return true;
+    } catch (error) {
+        console.error('Error saving settings:', error);
+        return false;
+    }
+}
+
+// Initialize Claude client from secure storage or environment
+function initializeClaudeClient() {
+    // Try secure storage first, then fall back to environment variable
+    const apiKey = loadApiKeySecure() || process.env.ANTHROPIC_API_KEY;
+
+    if (apiKey && Anthropic) {
+        try {
+            claudeClient = new Anthropic({
+                apiKey: apiKey
+            });
+            console.log('Claude client initialized successfully');
+            return true;
+        } catch (e) {
+            console.error('Failed to initialize Anthropic client:', e);
+            claudeClient = null;
+            return false;
+        }
+    }
+    claudeClient = null;
+    return false;
+}
 
 // Validate todos data structure
 function validateTodos(todos) {
@@ -98,13 +261,282 @@ function setupIpcHandlers() {
     ipcMain.handle('get-app-version', async (event) => {
         return app.getVersion();
     });
+
+    // Export todos to file
+    ipcMain.handle('export-todos', async (event, todos) => {
+        try {
+            // Validate input
+            validateTodos(todos);
+
+            // Show save dialog
+            const result = await dialog.showSaveDialog({
+                title: 'Export Tasks',
+                defaultPath: `todos-backup-${new Date().toISOString().split('T')[0]}.json`,
+                filters: [
+                    { name: 'JSON Files', extensions: ['json'] },
+                    { name: 'All Files', extensions: ['*'] }
+                ],
+                properties: ['createDirectory', 'showOverwriteConfirmation']
+            });
+
+            // User cancelled
+            if (result.canceled) {
+                return { success: false, cancelled: true };
+            }
+
+            // Create export data with metadata
+            const exportData = {
+                version: '1.0.0',
+                exportDate: new Date().toISOString(),
+                appVersion: app.getVersion(),
+                todos: todos
+            };
+
+            // Write to selected file
+            fs.writeFileSync(result.filePath, JSON.stringify(exportData, null, 2), 'utf8');
+
+            return { success: true, filePath: result.filePath };
+        } catch (error) {
+            console.error('Error exporting todos:', error);
+            throw error;
+        }
+    });
+
+    // Import todos from file
+    ipcMain.handle('import-todos', async (event) => {
+        try {
+            // Show open dialog
+            const result = await dialog.showOpenDialog({
+                title: 'Import Tasks',
+                filters: [
+                    { name: 'JSON Files', extensions: ['json'] },
+                    { name: 'All Files', extensions: ['*'] }
+                ],
+                properties: ['openFile']
+            });
+
+            // User cancelled
+            if (result.canceled) {
+                return { success: false, cancelled: true };
+            }
+
+            const filePath = result.filePaths[0];
+
+            // Check file size (10MB limit matching existing validation)
+            const stats = fs.statSync(filePath);
+            if (stats.size > 10 * 1024 * 1024) {
+                throw new Error('File too large (max 10MB)');
+            }
+
+            // Read and parse file
+            const fileContent = fs.readFileSync(filePath, 'utf8');
+            const data = JSON.parse(fileContent);
+
+            // Support both new format (with metadata) and legacy format (plain array)
+            let todos;
+            if (Array.isArray(data)) {
+                // Legacy format: plain array
+                todos = data;
+            } else if (data.version && Array.isArray(data.todos)) {
+                // New format: wrapped with metadata
+                todos = data.todos;
+            } else {
+                throw new Error('Invalid file format: expected todo array or export metadata object');
+            }
+
+            // Validate todos structure
+            validateTodos(todos);
+
+            return {
+                success: true,
+                todos: todos,
+                count: todos.length,
+                metadata: {
+                    version: data.version || 'legacy',
+                    exportDate: data.exportDate || null,
+                    appVersion: data.appVersion || null
+                }
+            };
+        } catch (error) {
+            console.error('Error importing todos:', error);
+            // Return structured error for better UI feedback
+            return {
+                success: false,
+                error: error.message,
+                errorType: error instanceof SyntaxError ? 'INVALID_JSON' : 'VALIDATION_ERROR'
+            };
+        }
+    });
+
+    // Call Claude API for brainstorming
+    ipcMain.handle('call-claude', async (event, params) => {
+        try {
+            if (!claudeClient) {
+                throw new Error('Claude client not initialized. Set ANTHROPIC_API_KEY environment variable.');
+            }
+
+            const { systemPrompt, messages, options = {} } = params;
+
+            console.log('[IPC] Calling Claude API for brainstorming...');
+
+            const response = await claudeClient.messages.create({
+                model: options.model || 'claude-3-haiku-20240307',
+                max_tokens: options.max_tokens || 2048,
+                temperature: options.temperature || 1.0,
+                system: systemPrompt,
+                messages: messages.map(msg => ({
+                    role: msg.role,
+                    content: msg.content
+                }))
+            });
+
+            // Extract text from response
+            if (response.content && response.content.length > 0) {
+                const text = response.content[0].text;
+                console.log('[IPC] Claude API call successful');
+                return {
+                    success: true,
+                    text
+                };
+            }
+
+            throw new Error('Empty response from Claude API');
+
+        } catch (error) {
+            console.error('[IPC] Error calling Claude API:', error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    });
+
+    // Check if Claude API is available
+    ipcMain.handle('check-claude-available', async () => {
+        const secureKey = loadApiKeySecure();
+        const hasSecureKey = !!secureKey;
+        const hasEnvKey = !!process.env.ANTHROPIC_API_KEY;
+        return {
+            available: claudeClient !== null,
+            hasApiKey: hasSecureKey || hasEnvKey,
+            keySource: hasSecureKey ? 'secure' : (hasEnvKey ? 'environment' : 'none'),
+            isEncrypted: hasSecureKey && safeStorage.isEncryptionAvailable()
+        };
+    });
+
+    // Get settings (without exposing sensitive data fully)
+    ipcMain.handle('get-settings', async () => {
+        const secureKey = loadApiKeySecure();
+        return {
+            hasApiKey: !!secureKey,
+            apiKeyPreview: secureKey
+                ? `${secureKey.substring(0, 7)}...${secureKey.slice(-4)}`
+                : null,
+            isEncrypted: safeStorage.isEncryptionAvailable()
+        };
+    });
+
+    // Save API key (uses secure storage)
+    ipcMain.handle('save-api-key', async (event, apiKey) => {
+        try {
+            // Validate API key format (basic check)
+            if (apiKey && typeof apiKey !== 'string') {
+                throw new Error('Invalid API key format');
+            }
+
+            if (apiKey && apiKey.trim()) {
+                // Save to secure storage
+                const saved = saveApiKeySecure(apiKey.trim());
+                if (!saved) {
+                    throw new Error('Failed to save API key securely. Encryption may not be available.');
+                }
+            } else {
+                // Remove from secure storage
+                removeApiKeySecure();
+            }
+
+            // Reinitialize Claude client with new key
+            const initialized = initializeClaudeClient();
+
+            return {
+                success: true,
+                claudeAvailable: initialized,
+                isEncrypted: safeStorage.isEncryptionAvailable()
+            };
+        } catch (error) {
+            console.error('Error saving API key:', error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    });
+
+    // Test API key validity
+    ipcMain.handle('test-api-key', async (event, apiKey) => {
+        try {
+            if (!apiKey || !Anthropic) {
+                return { valid: false, error: 'No API key provided' };
+            }
+
+            // Create temporary client to test
+            const testClient = new Anthropic({ apiKey: apiKey.trim() });
+
+            // Make a minimal API call to verify the key works
+            const response = await testClient.messages.create({
+                model: 'claude-3-haiku-20240307',
+                max_tokens: 10,
+                messages: [{ role: 'user', content: 'Hi' }]
+            });
+
+            return { valid: true };
+        } catch (error) {
+            console.error('API key test failed:', error);
+            return {
+                valid: false,
+                error: error.message || 'Invalid API key'
+            };
+        }
+    });
+
+    // Save brainstorm result to markdown file
+    ipcMain.handle('save-brainstorm-file', async (event, { content, suggestedFilename }) => {
+        try {
+            const result = await dialog.showSaveDialog({
+                title: 'Save Project Plan',
+                defaultPath: suggestedFilename || `project-plan-${new Date().toISOString().split('T')[0]}.md`,
+                filters: [
+                    { name: 'Markdown Files', extensions: ['md'] },
+                    { name: 'All Files', extensions: ['*'] }
+                ],
+                properties: ['createDirectory', 'showOverwriteConfirmation']
+            });
+
+            if (result.canceled) {
+                return { success: false, cancelled: true };
+            }
+
+            // Ensure directory exists
+            const dir = path.dirname(result.filePath);
+            if (!fs.existsSync(dir)) {
+                fs.mkdirSync(dir, { recursive: true });
+            }
+
+            fs.writeFileSync(result.filePath, content, 'utf8');
+
+            return { success: true, filePath: result.filePath };
+        } catch (error) {
+            console.error('Error saving brainstorm file:', error);
+            return { success: false, error: error.message };
+        }
+    });
 }
 
 function createWindow() {
     const win = new BrowserWindow({
         width: 800,
         height: 600,
-        icon: path.join(__dirname, 'src', 'logo.png'),
+        icon: path.join(__dirname, 'logo.png'),
         webPreferences: {
             // SECURITY: Disable direct Node.js access from renderer
             nodeIntegration: false,
@@ -122,7 +554,7 @@ function createWindow() {
         backgroundColor: '#1a1a1a'
     });
 
-    win.loadFile(path.join(__dirname, 'src', 'index.html'));
+    win.loadFile(path.join(__dirname, 'index.html'));
 
     // Only enable DevTools in development mode
     if (process.env.NODE_ENV === 'development') {
@@ -131,6 +563,12 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+    // Migrate any existing plain-text API keys to secure storage
+    migrateApiKeyToSecureStorage();
+
+    // Initialize Claude client from secure storage or environment
+    initializeClaudeClient();
+
     // Setup secure IPC handlers
     setupIpcHandlers();
 

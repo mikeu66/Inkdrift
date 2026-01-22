@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "description": "A simple to-do desktop application",
   "main": "main.js",
+  "author": "",
+  "license": "ISC",
   "scripts": {
     "start": "electron .",
     "build": "electron-builder"
@@ -12,11 +14,13 @@
     "electron",
     "desktop"
   ],
-  "author": "",
-  "license": "ISC",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "dotenv": "^16.0.0"
+  },
   "devDependencies": {
-    "electron": "^28.0.0",
-    "electron-builder": "^24.9.1"
+    "electron": "^39.2.7",
+    "electron-builder": "^26.4.0"
   },
   "build": {
     "appId": "com.todoapp.app",
@@ -24,7 +28,7 @@
     "mac": {
       "category": "public.app-category.productivity",
       "target": "dmg",
-      "icon": "src/logo.png"
+      "icon": "logo.png"
     }
   }
 }

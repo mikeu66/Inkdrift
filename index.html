@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-Do App</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <!-- List View -->
+        <div id="listView" class="view">
+            <div class="header">
+                <button id="settingsBtn" class="settings-btn" title="Settings">⚙️</button>
+                <h1>Tasks</h1>
+                <button id="themeToggle" class="theme-toggle" title="Toggle theme">🌙</button>
+            </div>
+
+            <div class="section-header in-progress-header">In Progress</div>
+            <ul id="inProgressList" class="todo-list in-progress-section">
+                <!-- In-progress items will be added here -->
+            </ul>
+
+            <div class="section-header todo-header">To Do</div>
+            <ul id="todoList" class="todo-list">
+                <!-- To-do items will be added here -->
+            </ul>
+
+            <div class="input-section">
+                <input type="text" id="todoInput" placeholder="Add a new task..." />
+                <button id="addBtn">Add</button>
+            </div>
+
+            <div class="nav-buttons">
+                <button id="viewCompletedBtn" class="nav-btn">Completed</button>
+            </div>
+
+            <div class="export-import-section">
+                <button id="exportBtn" class="export-btn">Export Tasks</button>
+                <button id="importBtn" class="import-btn">Import Tasks</button>
+            </div>
+
+            <button id="trashIconBtn" class="trash-icon-btn" title="Go to Trash">🗑️</button>
+        </div>
+
+        <!-- Detail View -->
+        <div id="detailView" class="view" style="display: none;">
+            <div class="detail-header">
+                <button id="backBtn" class="back-btn">← Back</button>
+                <h2 id="detailTitle"></h2>
+            </div>
+
+            <div class="progress-bar-section">
+                <label>Stage:</label>
+                <div class="progress-bar-container">
+                    <div class="progress-stages">
+                        <div class="stage-item" data-stage="brainstorm">
+                            <div class="stage-circle"></div>
+                            <div class="stage-label">Brainstorm</div>
+                        </div>
+                        <div class="stage-connector"></div>
+                        <div class="stage-item" data-stage="planning">
+                            <div class="stage-circle"></div>
+                            <div class="stage-label">Planning</div>
+                        </div>
+                        <div class="stage-connector"></div>
+                        <div class="stage-item" data-stage="development">
+                            <div class="stage-circle"></div>
+                            <div class="stage-label">Development</div>
+                        </div>
+                        <div class="stage-connector"></div>
+                        <div class="stage-item" data-stage="refinement">
+                            <div class="stage-circle"></div>
+                            <div class="stage-label">Refinement</div>
+                        </div>
+                        <div class="stage-connector"></div>
+                        <div class="stage-item" data-stage="testing">
+                            <div class="stage-circle"></div>
+                            <div class="stage-label">Testing</div>
+                        </div>
+                        <div class="stage-connector"></div>
+                        <div class="stage-item" data-stage="done">
+                            <div class="stage-circle"></div>
+                            <div class="stage-label">Done</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-content">
+                <div class="priority-section">
+                    <label for="prioritySelect">Priority:</label>
+                    <select id="prioritySelect" class="priority-select">
+                        <option value="high">High</option>
+                        <option value="medium">Medium</option>
+                        <option value="low">Low</option>
+                    </select>
+                </div>
+
+                <div class="in-progress-section-detail">
+                    <label>
+                        <input type="checkbox" id="inProgressCheckbox" class="in-progress-checkbox" />
+                        Mark as In Progress
+                    </label>
+                </div>
+
+                <label for="notesInput">Notes:</label>
+                <textarea id="notesInput" class="notes-input" placeholder="Add your planning notes here..." maxlength="50000"></textarea>
+                <div class="char-count">
+                    <span id="charCount">0</span> / 50000 characters
+                </div>
+
+                <div class="subtasks-section">
+                    <div class="subtasks-header">
+                        <label>Subtasks:</label>
+                        <button id="exportMarkdownBtn" class="export-markdown-btn" title="Export to AI Markdown">📄 Export to MD</button>
+                    </div>
+                    <div class="subtask-input-container">
+                        <input type="text" id="subtaskInput" class="subtask-input" placeholder="Add a subtask..." />
+                        <button id="addSubtaskBtn" class="add-subtask-btn">Add</button>
+                    </div>
+                    <ul id="subtasksList" class="subtasks-list">
+                        <!-- Subtasks will be added here -->
+                    </ul>
+                </div>
+
+                <button id="brainstormBtn" class="brainstorm-btn" style="display: none;">Start Brainstorming</button>
+
+                <!-- Planning Stage: Show brainstorm result -->
+                <div id="planningResultSection" class="planning-result-section" style="display: none;">
+                    <div class="planning-result-header">
+                        <label>Project Plan:</label>
+                        <button id="editPlanBtn" class="edit-plan-btn">Edit Plan</button>
+                    </div>
+                    <div id="planningResultContent" class="planning-result-content">
+                        <!-- Rendered markdown will appear here -->
+                    </div>
+                </div>
+
+                <!-- Action Items Section -->
+                <div id="actionItemsSection" class="action-items-section" style="display: none;">
+                    <div class="action-items-header">
+                        <label>Action Items:</label>
+                        <div class="action-items-header-buttons">
+                            <button id="generateActionItemsBtn" class="generate-action-items-btn">Generate Action Items</button>
+                        </div>
+                    </div>
+                    <div id="actionItemsLoading" class="action-items-loading" style="display: none;">
+                        <div class="action-items-spinner"></div>
+                        <span>Generating action items...</span>
+                    </div>
+                    <ul id="actionItemsList" class="action-items-list">
+                        <!-- Action items will be added here -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Completed View -->
+        <div id="completedView" class="view" style="display: none;">
+            <div class="detail-header">
+                <button id="backBtnCompleted" class="back-btn">← Back</button>
+                <h2>Completed Tasks</h2>
+            </div>
+
+            <ul id="completedList" class="completed-list">
+                <!-- Completed items will be added here -->
+            </ul>
+
+            <div class="empty-state" id="completedEmptyState">
+                <p>No completed tasks yet.</p>
+            </div>
+        </div>
+
+        <!-- Trash View (NEW) -->
+        <div id="trashView" class="view" style="display: none;">
+            <div class="detail-header">
+                <button id="backBtnTrash" class="back-btn">← Back</button>
+                <h2>Trash</h2>
+                <button id="emptyTrashBtn" class="empty-trash-btn">Empty Trash</button>
+            </div>
+
+            <div class="trash-info">
+                <p>Items are automatically deleted after 30 days</p>
+            </div>
+
+            <ul id="trashList" class="trash-list">
+                <!-- Deleted items will be added here -->
+            </ul>
+
+            <div class="empty-state" id="trashEmptyState">
+                <p>Trash is empty.</p>
+            </div>
+        </div>
+
+        <!-- Brainstorm View -->
+        <div id="brainstormView" class="view" style="display: none;">
+            <div class="bs-header">
+                <button id="backBtnBrainstorm" class="back-btn">← Back</button>
+                <div class="bs-title-section">
+                    <h2 id="brainstormTitle">Brainstorming</h2>
+                    <p id="brainstormSubtitle" class="bs-subtitle">Let's plan your project together</p>
+                </div>
+            </div>
+
+            <!-- Chat Container -->
+            <div id="bsChatContainer" class="bs-chat-container">
+                <div id="bsChatMessages" class="bs-chat-messages">
+                    <!-- Messages will be added here dynamically -->
+                </div>
+
+                <!-- Input Area -->
+                <div class="bs-input-area">
+                    <textarea
+                        id="bsUserInput"
+                        class="bs-user-input"
+                        placeholder="Tell me about your project..."
+                        rows="3"
+                    ></textarea>
+                    <div class="bs-input-buttons">
+                        <button id="bsSubmitBtn" class="bs-btn bs-btn-primary">Send</button>
+                        <button id="bsGeneratePlanBtn" class="bs-btn bs-btn-secondary">Generate Plan</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview Container (shown after all sections complete) -->
+            <div id="bsPreviewContainer" class="bs-preview-container" style="display: none;">
+                <div class="bs-preview-header">
+                    <h3>Project Plan Preview</h3>
+                    <p>Review and edit your project plan before exporting</p>
+                </div>
+
+                <div class="bs-preview-content">
+                    <div class="bs-preview-split">
+                        <div class="bs-preview-edit">
+                            <h4>Edit Markdown</h4>
+                            <textarea id="bsMarkdownEditor" class="bs-markdown-editor"></textarea>
+                        </div>
+                        <div class="bs-preview-render">
+                            <h4>Preview</h4>
+                            <div id="bsMarkdownPreview" class="bs-markdown-preview"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bs-preview-actions">
+                    <button id="bsSaveBtn" class="bs-btn bs-btn-primary">Save & Continue</button>
+                    <button id="bsBackToWizardBtn" class="bs-btn bs-btn-secondary">← Back to Chat</button>
+                </div>
+            </div>
+
+            <!-- Loading Overlay -->
+            <div id="bsLoadingOverlay" class="bs-loading-overlay" style="display: none;">
+                <div class="bs-loading-spinner"></div>
+                <p class="bs-loading-text">Thinking...</p>
+            </div>
+        </div>
+
+        <!-- Settings View -->
+        <div id="settingsView" class="view" style="display: none;">
+            <div class="detail-header">
+                <button id="backBtnSettings" class="back-btn">← Back</button>
+                <h2>Settings</h2>
+            </div>
+
+            <div class="settings-content">
+                <!-- API Key Section -->
+                <div class="settings-section">
+                    <div class="settings-section-header">
+                        <h3>Claude API Key</h3>
+                        <span id="apiKeyStatus" class="api-key-status"></span>
+                    </div>
+                    <p class="settings-description">
+                        Enter your Anthropic API key to enable AI-powered brainstorming, action item generation, and task elaboration features.
+                    </p>
+                    <p class="settings-description">
+                        Get your API key from <a href="#" id="anthropicLink" class="settings-link">console.anthropic.com</a>
+                    </p>
+
+                    <div class="api-key-input-section">
+                        <div class="api-key-input-container">
+                            <input
+                                type="password"
+                                id="apiKeyInput"
+                                class="api-key-input"
+                                placeholder="sk-ant-api..."
+                                autocomplete="off"
+                            />
+                            <button id="toggleApiKeyVisibility" class="toggle-visibility-btn" title="Show/hide API key">
+                                👁️
+                            </button>
+                        </div>
+                        <div class="api-key-buttons">
+                            <button id="testApiKeyBtn" class="test-api-key-btn">Test Key</button>
+                            <button id="saveApiKeyBtn" class="save-api-key-btn">Save Key</button>
+                        </div>
+                    </div>
+
+                    <div id="apiKeyMessage" class="api-key-message" style="display: none;"></div>
+
+                    <div id="currentKeyInfo" class="current-key-info" style="display: none;">
+                        <span class="current-key-label">Current key:</span>
+                        <span id="currentKeyPreview" class="current-key-preview"></span>
+                        <span id="encryptionStatus" class="encryption-status"></span>
+                        <button id="removeApiKeyBtn" class="remove-api-key-btn">Remove</button>
+                    </div>
+                </div>
+
+                <!-- About Section -->
+                <div class="settings-section">
+                    <h3>About</h3>
+                    <div class="about-info">
+                        <p><strong>Todo App</strong></p>
+                        <p id="appVersionDisplay">Version: 1.0.0</p>
+                        <p class="about-description">
+                            A productivity app with AI-powered project planning and brainstorming capabilities.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
