@@ -1,6 +1,10 @@
-const { app, BrowserWindow, ipcMain, dialog, safeStorage } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, safeStorage, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
+
+// SECURITY: List of allowed URL protocols for external links
+const SAFE_PROTOCOLS = ['https:', 'http:', 'mailto:'];
+const DANGEROUS_PROTOCOLS = ['javascript:', 'vbscript:', 'data:', 'file:'];
 
 // Load environment variables from .env file
 require('dotenv').config();
@@ -14,6 +18,39 @@ try {
 }
 
 // Claude client will be initialized after app is ready (needs access to userData path)
+
+// SECURITY: Rate limiting for Claude API calls
+const rateLimiter = {
+    calls: [],
+    maxCallsPerMinute: 10,
+    maxCallsPerHour: 60,
+
+    canMakeCall() {
+        const now = Date.now();
+        // Remove calls older than 1 hour
+        this.calls = this.calls.filter(time => now - time < 3600000);
+
+        const callsInLastMinute = this.calls.filter(time => now - time < 60000).length;
+        const callsInLastHour = this.calls.length;
+
+        return callsInLastMinute < this.maxCallsPerMinute && callsInLastHour < this.maxCallsPerHour;
+    },
+
+    recordCall() {
+        this.calls.push(Date.now());
+    },
+
+    getRemainingCalls() {
+        const now = Date.now();
+        this.calls = this.calls.filter(time => now - time < 3600000);
+        const callsInLastMinute = this.calls.filter(time => now - time < 60000).length;
+        return {
+            perMinute: Math.max(0, this.maxCallsPerMinute - callsInLastMinute),
+            perHour: Math.max(0, this.maxCallsPerHour - this.calls.length)
+        };
+    }
+};
+
 // Storage file paths (using app.getPath for proper user data directory)
 const getStoragePath = () => {
     const userDataPath = app.getPath('userData');
@@ -177,6 +214,15 @@ function validateTodos(todos) {
         throw new Error('Invalid data: todos must be an array');
     }
 
+    // SECURITY: Limit array size to prevent DoS
+    const MAX_TODOS = 10000;
+    if (todos.length > MAX_TODOS) {
+        throw new Error(`Too many todos (max ${MAX_TODOS})`);
+    }
+
+    // Valid priority values
+    const VALID_PRIORITIES = ['high', 'medium', 'low'];
+
     // Validate each todo item
     todos.forEach((todo, index) => {
         if (typeof todo !== 'object' || todo === null) {
@@ -196,11 +242,44 @@ function validateTodos(todos) {
             throw new Error(`Invalid todo at index ${index}: text too long (max 10000 chars)`);
         }
 
+        // Validate text is not empty after trimming
+        if (todo.text.trim().length === 0) {
+            throw new Error(`Invalid todo at index ${index}: text cannot be empty`);
+        }
+
         if (todo.notes && typeof todo.notes !== 'string') {
             throw new Error(`Invalid todo at index ${index}: notes must be a string`);
         }
         if (todo.notes && todo.notes.length > 50000) {
             throw new Error(`Invalid todo at index ${index}: notes too long (max 50000 chars)`);
+        }
+
+        // SECURITY: Validate priority field
+        if (todo.priority !== undefined) {
+            if (typeof todo.priority !== 'string' || !VALID_PRIORITIES.includes(todo.priority)) {
+                throw new Error(`Invalid todo at index ${index}: priority must be one of: ${VALID_PRIORITIES.join(', ')}`);
+            }
+        }
+
+        // SECURITY: Validate inProgress field
+        if (todo.inProgress !== undefined && typeof todo.inProgress !== 'boolean') {
+            throw new Error(`Invalid todo at index ${index}: inProgress must be a boolean`);
+        }
+
+        // SECURITY: Validate createdAt field
+        if (todo.createdAt !== undefined) {
+            if (typeof todo.createdAt !== 'number' || !Number.isFinite(todo.createdAt) || todo.createdAt < 0) {
+                throw new Error(`Invalid todo at index ${index}: createdAt must be a valid timestamp`);
+            }
+        }
+
+        // SECURITY: Check for unexpected properties (prevent prototype pollution)
+        const allowedKeys = ['text', 'completed', 'notes', 'priority', 'inProgress', 'createdAt'];
+        const todoKeys = Object.keys(todo);
+        for (const key of todoKeys) {
+            if (!allowedKeys.includes(key)) {
+                throw new Error(`Invalid todo at index ${index}: unexpected property '${key}'`);
+            }
         }
     });
 
@@ -375,9 +454,29 @@ function setupIpcHandlers() {
                 throw new Error('Claude client not initialized. Set ANTHROPIC_API_KEY environment variable.');
             }
 
+            // SECURITY: Rate limiting check
+            if (!rateLimiter.canMakeCall()) {
+                const remaining = rateLimiter.getRemainingCalls();
+                throw new Error(`Rate limit exceeded. Please wait before making more requests. Remaining: ${remaining.perMinute}/min, ${remaining.perHour}/hour`);
+            }
+
             const { systemPrompt, messages, options = {} } = params;
 
+            // SECURITY: Input validation for API parameters
+            if (systemPrompt && systemPrompt.length > 10000) {
+                throw new Error('System prompt too long (max 10000 characters)');
+            }
+            if (messages.length > 50) {
+                throw new Error('Too many messages (max 50)');
+            }
+            for (const msg of messages) {
+                if (typeof msg.content === 'string' && msg.content.length > 50000) {
+                    throw new Error('Message content too long (max 50000 characters)');
+                }
+            }
+
             console.log('[IPC] Calling Claude API for brainstorming...');
+            rateLimiter.recordCall();
 
             const response = await claudeClient.messages.create({
                 model: options.model || 'claude-3-haiku-20240307',
@@ -555,6 +654,34 @@ function createWindow() {
     });
 
     win.loadFile(path.join(__dirname, 'index.html'));
+
+    // SECURITY: Handle external links safely
+    win.webContents.setWindowOpenHandler(({ url }) => {
+        // Block dangerous protocols
+        try {
+            const urlObj = new URL(url);
+            if (DANGEROUS_PROTOCOLS.includes(urlObj.protocol)) {
+                console.warn(`Blocked dangerous URL protocol: ${urlObj.protocol}`);
+                return { action: 'deny' };
+            }
+            // Open safe external links in system browser
+            if (SAFE_PROTOCOLS.includes(urlObj.protocol)) {
+                shell.openExternal(url);
+            }
+        } catch (e) {
+            console.warn('Invalid URL blocked:', url);
+        }
+        return { action: 'deny' };
+    });
+
+    // SECURITY: Prevent navigation to external URLs
+    win.webContents.on('will-navigate', (event, url) => {
+        const appUrl = `file://${path.join(__dirname, 'index.html')}`;
+        if (!url.startsWith('file://') || !url.includes(__dirname)) {
+            console.warn(`Blocked navigation to: ${url}`);
+            event.preventDefault();
+        }
+    });
 
     // Only enable DevTools in development mode
     if (process.env.NODE_ENV === 'development') {
