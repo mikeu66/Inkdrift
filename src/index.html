@@ -4,7 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>To-Do App</title>
+    <!-- SECURITY: Content Security Policy to prevent XSS attacks -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'self';">
+    <title>InkDrift</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 
@@ -13,8 +15,8 @@
         <!-- List View -->
         <div id="listView">
             <div class="header">
-                <img src="logo.png" alt="To-Do App Logo" class="app-logo">
-                <h1>To-Do List</h1>
+                <img src="logo.png" alt="InkDrift Logo" class="app-logo">
+                <h1>InkDrift</h1>
             </div>
 
             <div class="section-header in-progress-header">⚡ In Progress</div>

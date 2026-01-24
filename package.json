@@ -1,7 +1,7 @@
 {
-  "name": "todo-app",
+  "name": "inkdrift",
   "version": "1.0.0",
-  "description": "A simple to-do desktop application",
+  "description": "A minimal, focused task manager for Mac",
   "main": "main.js",
   "author": "",
   "license": "ISC",
@@ -23,12 +23,22 @@
     "electron-builder": "^26.4.0"
   },
   "build": {
-    "appId": "com.todoapp.app",
-    "productName": "To-Do App",
+    "appId": "com.inkdrift.app",
+    "productName": "InkDrift",
     "mac": {
       "category": "public.app-category.productivity",
-      "target": "dmg",
+      "target": {
+        "target": "dmg",
+        "arch": ["universal"]
+      },
       "icon": "logo.png"
+    },
+    "dmg": {
+      "title": "InkDrift",
+      "contents": [
+        { "x": 130, "y": 220 },
+        { "x": 410, "y": 220, "type": "link", "path": "/Applications" }
+      ]
     }
   }
 }
