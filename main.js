@@ -2,6 +2,24 @@ const { app, BrowserWindow, ipcMain, dialog, safeStorage, shell } = require('ele
 const path = require('path');
 const fs = require('fs');
 
+// SECURITY: Safe logging to prevent EPIPE errors in packaged apps
+const safeLog = {
+    log: (...args) => {
+        try {
+            console.log(...args);
+        } catch (err) {
+            // Silently ignore EPIPE errors in packaged apps
+        }
+    },
+    error: (...args) => {
+        try {
+            console.error(...args);
+        } catch (err) {
+            // Silently ignore EPIPE errors in packaged apps
+        }
+    }
+};
+
 // SECURITY: List of allowed URL protocols for external links
 const SAFE_PROTOCOLS = ['https:', 'http:', 'mailto:'];
 const DANGEROUS_PROTOCOLS = ['javascript:', 'vbscript:', 'data:', 'file:'];
@@ -14,7 +32,7 @@ let Anthropic;
 try {
     Anthropic = require('@anthropic-ai/sdk');
 } catch (e) {
-    console.error('CRITICAL: Failed to load @anthropic-ai/sdk:', e);
+    safeLog.error('CRITICAL: Failed to load @anthropic-ai/sdk:', e);
 }
 
 // Claude client will be initialized after app is ready (needs access to userData path)
@@ -68,46 +86,88 @@ const getSecureKeyPath = () => {
 };
 
 // Secure API Key Storage using Electron's safeStorage
+// Falls back to obfuscated file storage when OS encryption is unavailable
+const FALLBACK_KEY_FILENAME = 'key-fallback.dat';
+
+function getFallbackKeyPath() {
+    const userDataPath = app.getPath('userData');
+    return path.join(userDataPath, FALLBACK_KEY_FILENAME);
+}
+
+function saveApiKeyFallback(apiKey) {
+    const fallbackPath = getFallbackKeyPath();
+    const dir = path.dirname(fallbackPath);
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+    }
+    // Base64 encode — not secure encryption, but avoids plain text on disk
+    const encoded = Buffer.from(apiKey, 'utf8').toString('base64');
+    fs.writeFileSync(fallbackPath, encoded, 'utf8');
+    safeLog.log('API key saved using fallback storage (OS encryption unavailable)');
+}
+
+function loadApiKeyFallback() {
+    const fallbackPath = getFallbackKeyPath();
+    if (!fs.existsSync(fallbackPath)) {
+        return null;
+    }
+    const encoded = fs.readFileSync(fallbackPath, 'utf8');
+    return Buffer.from(encoded, 'base64').toString('utf8');
+}
+
+function removeFallbackKey() {
+    const fallbackPath = getFallbackKeyPath();
+    if (fs.existsSync(fallbackPath)) {
+        fs.unlinkSync(fallbackPath);
+    }
+}
+
 function saveApiKeySecure(apiKey) {
     try {
-        if (!safeStorage.isEncryptionAvailable()) {
-            console.warn('Secure storage not available, falling back to basic storage');
-            return false;
-        }
-
         const secureKeyPath = getSecureKeyPath();
         const dir = path.dirname(secureKeyPath);
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir, { recursive: true });
         }
 
-        const encrypted = safeStorage.encryptString(apiKey);
-        fs.writeFileSync(secureKeyPath, encrypted);
-        console.log('API key saved securely using OS encryption');
-        return true;
+        if (safeStorage.isEncryptionAvailable()) {
+            const encrypted = safeStorage.encryptString(apiKey);
+            fs.writeFileSync(secureKeyPath, encrypted);
+            // Clean up fallback file if it exists
+            removeFallbackKey();
+            safeLog.log('API key saved securely using OS encryption');
+            return { saved: true, encrypted: true };
+        }
+
+        // Fallback: save with basic encoding when OS encryption is unavailable
+        console.warn('Secure storage not available, falling back to basic storage');
+        saveApiKeyFallback(apiKey);
+        return { saved: true, encrypted: false };
     } catch (error) {
-        console.error('Error saving API key securely:', error);
-        return false;
+        safeLog.error('Error saving API key:', error);
+        return { saved: false, encrypted: false };
     }
 }
 
 function loadApiKeySecure() {
     try {
         const secureKeyPath = getSecureKeyPath();
-        if (!fs.existsSync(secureKeyPath)) {
-            return null;
+
+        // Try encrypted storage first
+        if (fs.existsSync(secureKeyPath) && safeStorage.isEncryptionAvailable()) {
+            const encrypted = fs.readFileSync(secureKeyPath);
+            return safeStorage.decryptString(encrypted);
         }
 
-        if (!safeStorage.isEncryptionAvailable()) {
-            console.warn('Secure storage not available for decryption');
-            return null;
+        // Try fallback storage
+        const fallbackKey = loadApiKeyFallback();
+        if (fallbackKey) {
+            return fallbackKey;
         }
 
-        const encrypted = fs.readFileSync(secureKeyPath);
-        const decrypted = safeStorage.decryptString(encrypted);
-        return decrypted;
+        return null;
     } catch (error) {
-        console.error('Error loading API key securely:', error);
+        safeLog.error('Error loading API key:', error);
         return null;
     }
 }
@@ -117,11 +177,12 @@ function removeApiKeySecure() {
         const secureKeyPath = getSecureKeyPath();
         if (fs.existsSync(secureKeyPath)) {
             fs.unlinkSync(secureKeyPath);
-            console.log('Secure API key removed');
+            safeLog.log('Secure API key removed');
         }
+        removeFallbackKey();
         return true;
     } catch (error) {
-        console.error('Error removing secure API key:', error);
+        safeLog.error('Error removing secure API key:', error);
         return false;
     }
 }
@@ -139,18 +200,18 @@ function migrateApiKeyToSecureStorage() {
 
         // Check if there's an old plain-text API key
         if (settings.anthropicApiKey) {
-            console.log('Migrating API key to secure storage...');
+            safeLog.log('Migrating API key to secure storage...');
             const migrated = saveApiKeySecure(settings.anthropicApiKey);
 
             if (migrated) {
                 // Remove the plain-text key from settings
                 delete settings.anthropicApiKey;
                 fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
-                console.log('API key migration complete - plain text key removed');
+                safeLog.log('API key migration complete - plain text key removed');
             }
         }
     } catch (error) {
-        console.error('Error during API key migration:', error);
+        safeLog.error('Error during API key migration:', error);
     }
 }
 
@@ -163,7 +224,7 @@ function loadSettings() {
             return JSON.parse(data);
         }
     } catch (error) {
-        console.error('Error loading settings:', error);
+        safeLog.error('Error loading settings:', error);
     }
     return {};
 }
@@ -181,7 +242,7 @@ function saveSettings(settings) {
         fs.writeFileSync(settingsPath, JSON.stringify(safeSettings, null, 2), 'utf8');
         return true;
     } catch (error) {
-        console.error('Error saving settings:', error);
+        safeLog.error('Error saving settings:', error);
         return false;
     }
 }
@@ -196,10 +257,10 @@ function initializeClaudeClient() {
             claudeClient = new Anthropic({
                 apiKey: apiKey
             });
-            console.log('Claude client initialized successfully');
+            safeLog.log('Claude client initialized successfully');
             return true;
         } catch (e) {
-            console.error('Failed to initialize Anthropic client:', e);
+            safeLog.error('Failed to initialize Anthropic client:', e);
             claudeClient = null;
             return false;
         }
@@ -273,8 +334,61 @@ function validateTodos(todos) {
             }
         }
 
+        // SECURITY: Validate id field
+        if (todo.id !== undefined && typeof todo.id !== 'string') {
+            throw new Error(`Invalid todo at index ${index}: id must be a string`);
+        }
+
+        // SECURITY: Validate subtasks field
+        if (todo.subtasks !== undefined) {
+            if (!Array.isArray(todo.subtasks)) {
+                throw new Error(`Invalid todo at index ${index}: subtasks must be an array`);
+            }
+            if (todo.subtasks.length > 1000) {
+                throw new Error(`Invalid todo at index ${index}: too many subtasks (max 1000)`);
+            }
+        }
+
+        // SECURITY: Validate stage field
+        const VALID_STAGES = ['brainstorm', 'planning', 'development', 'refinement', 'testing', 'done'];
+        if (todo.stage !== undefined) {
+            if (typeof todo.stage !== 'string' || !VALID_STAGES.includes(todo.stage)) {
+                throw new Error(`Invalid todo at index ${index}: stage must be one of: ${VALID_STAGES.join(', ')}`);
+            }
+        }
+
+        // SECURITY: Validate deletedAt field
+        if (todo.deletedAt !== undefined && todo.deletedAt !== null && typeof todo.deletedAt !== 'string') {
+            throw new Error(`Invalid todo at index ${index}: deletedAt must be a string or null`);
+        }
+
+        // SECURITY: Validate order field
+        if (todo.order !== undefined) {
+            if (typeof todo.order !== 'number' || !Number.isFinite(todo.order)) {
+                throw new Error(`Invalid todo at index ${index}: order must be a number`);
+            }
+        }
+
+        // SECURITY: Validate brainstormResult field
+        if (todo.brainstormResult !== undefined && typeof todo.brainstormResult !== 'string') {
+            throw new Error(`Invalid todo at index ${index}: brainstormResult must be a string`);
+        }
+        if (todo.brainstormResult && todo.brainstormResult.length > 100000) {
+            throw new Error(`Invalid todo at index ${index}: brainstormResult too long (max 100000 chars)`);
+        }
+
+        // SECURITY: Validate actionItems field
+        if (todo.actionItems !== undefined) {
+            if (!Array.isArray(todo.actionItems)) {
+                throw new Error(`Invalid todo at index ${index}: actionItems must be an array`);
+            }
+            if (todo.actionItems.length > 1000) {
+                throw new Error(`Invalid todo at index ${index}: too many action items (max 1000)`);
+            }
+        }
+
         // SECURITY: Check for unexpected properties (prevent prototype pollution)
-        const allowedKeys = ['text', 'completed', 'notes', 'priority', 'inProgress', 'createdAt'];
+        const allowedKeys = ['id', 'text', 'completed', 'notes', 'priority', 'inProgress', 'createdAt', 'subtasks', 'stage', 'deletedAt', 'order', 'brainstormResult', 'actionItems'];
         const todoKeys = Object.keys(todo);
         for (const key of todoKeys) {
             if (!allowedKeys.includes(key)) {
@@ -307,7 +421,7 @@ function setupIpcHandlers() {
             fs.writeFileSync(storagePath, data, 'utf8');
             return { success: true };
         } catch (error) {
-            console.error('Error saving todos:', error);
+            safeLog.error('Error saving todos:', error);
             throw error;
         }
     });
@@ -330,7 +444,7 @@ function setupIpcHandlers() {
 
             return todos;
         } catch (error) {
-            console.error('Error loading todos:', error);
+            safeLog.error('Error loading todos:', error);
             // Return empty array on error rather than failing
             return [];
         }
@@ -376,7 +490,7 @@ function setupIpcHandlers() {
 
             return { success: true, filePath: result.filePath };
         } catch (error) {
-            console.error('Error exporting todos:', error);
+            safeLog.error('Error exporting todos:', error);
             throw error;
         }
     });
@@ -437,7 +551,7 @@ function setupIpcHandlers() {
                 }
             };
         } catch (error) {
-            console.error('Error importing todos:', error);
+            safeLog.error('Error importing todos:', error);
             // Return structured error for better UI feedback
             return {
                 success: false,
@@ -475,7 +589,7 @@ function setupIpcHandlers() {
                 }
             }
 
-            console.log('[IPC] Calling Claude API for brainstorming...');
+            safeLog.log('[IPC] Calling Claude API for brainstorming...');
             rateLimiter.recordCall();
 
             const response = await claudeClient.messages.create({
@@ -492,7 +606,7 @@ function setupIpcHandlers() {
             // Extract text from response
             if (response.content && response.content.length > 0) {
                 const text = response.content[0].text;
-                console.log('[IPC] Claude API call successful');
+                safeLog.log('[IPC] Claude API call successful');
                 return {
                     success: true,
                     text
@@ -502,7 +616,7 @@ function setupIpcHandlers() {
             throw new Error('Empty response from Claude API');
 
         } catch (error) {
-            console.error('[IPC] Error calling Claude API:', error);
+            safeLog.error('[IPC] Error calling Claude API:', error);
             return {
                 success: false,
                 error: error.message
@@ -535,7 +649,7 @@ function setupIpcHandlers() {
         };
     });
 
-    // Save API key (uses secure storage)
+    // Save API key (uses secure storage with fallback)
     ipcMain.handle('save-api-key', async (event, apiKey) => {
         try {
             // Validate API key format (basic check)
@@ -543,12 +657,15 @@ function setupIpcHandlers() {
                 throw new Error('Invalid API key format');
             }
 
+            let isEncrypted = false;
+
             if (apiKey && apiKey.trim()) {
-                // Save to secure storage
-                const saved = saveApiKeySecure(apiKey.trim());
-                if (!saved) {
-                    throw new Error('Failed to save API key securely. Encryption may not be available.');
+                // Save to secure storage (with fallback)
+                const result = saveApiKeySecure(apiKey.trim());
+                if (!result.saved) {
+                    throw new Error('Failed to save API key. Please check app permissions.');
                 }
+                isEncrypted = result.encrypted;
             } else {
                 // Remove from secure storage
                 removeApiKeySecure();
@@ -560,10 +677,10 @@ function setupIpcHandlers() {
             return {
                 success: true,
                 claudeAvailable: initialized,
-                isEncrypted: safeStorage.isEncryptionAvailable()
+                isEncrypted: isEncrypted
             };
         } catch (error) {
-            console.error('Error saving API key:', error);
+            safeLog.error('Error saving API key:', error);
             return {
                 success: false,
                 error: error.message
@@ -590,7 +707,7 @@ function setupIpcHandlers() {
 
             return { valid: true };
         } catch (error) {
-            console.error('API key test failed:', error);
+            safeLog.error('API key test failed:', error);
             return {
                 valid: false,
                 error: error.message || 'Invalid API key'
@@ -625,7 +742,7 @@ function setupIpcHandlers() {
 
             return { success: true, filePath: result.filePath };
         } catch (error) {
-            console.error('Error saving brainstorm file:', error);
+            safeLog.error('Error saving brainstorm file:', error);
             return { success: false, error: error.message };
         }
     });
@@ -635,7 +752,7 @@ function createWindow() {
     const win = new BrowserWindow({
         width: 800,
         height: 600,
-        icon: path.join(__dirname, 'logo.png'),
+        icon: path.join(__dirname, 'icon.icns'),
         webPreferences: {
             // SECURITY: Disable direct Node.js access from renderer
             nodeIntegration: false,
