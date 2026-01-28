@@ -225,7 +225,8 @@ function addTodo() {
         notes: '',
         priority: 'medium',
         createdAt: Date.now(),
-        inProgress: false
+        inProgress: false,
+        actionItems: []
     });
 
     input.value = '';
@@ -365,6 +366,9 @@ function renderDetailView() {
         todos[currentTodoIndex].notes = notesInput.value;
         saveTodos();
     };
+
+    // Render action items
+    renderActionItems();
 }
 
 // Render subtasks section
@@ -566,6 +570,281 @@ document.addEventListener('click', () => {
         d.style.display = 'none';
     });
 });
+
+
+// Action Items functionality
+let actionItemInputStates = {}; // Track which items have open granulate inputs
+
+// Generate unique ID for action items
+function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
+
+// Find action item by ID recursively
+function findActionItem(items, targetId) {
+    for (let item of items) {
+        if (item.id === targetId) {
+            return { item, parent: items };
+        }
+        if (item.children && item.children.length > 0) {
+            const found = findActionItem(item.children, targetId);
+            if (found) return found;
+        }
+    }
+    return null;
+}
+
+// Add action item to the current todo
+function addActionItem() {
+    const input = document.getElementById('newActionItemInput');
+    const text = input.value.trim();
+
+    if (text === '' || currentTodoIndex === null) {
+        return;
+    }
+
+    const newItem = {
+        id: generateId(),
+        text: text,
+        completed: false,
+        children: []
+    };
+
+    if (!todos[currentTodoIndex].actionItems) {
+        todos[currentTodoIndex].actionItems = [];
+    }
+
+    todos[currentTodoIndex].actionItems.push(newItem);
+    input.value = '';
+    saveTodos();
+    renderActionItems();
+}
+
+// Add granular (child) action item
+function addGranularItem(parentId, text) {
+    if (!text || text.trim() === '') {
+        return;
+    }
+
+    const todo = todos[currentTodoIndex];
+    const found = findActionItem(todo.actionItems, parentId);
+
+    if (found) {
+        const newItem = {
+            id: generateId(),
+            text: text.trim(),
+            completed: false,
+            children: []
+        };
+
+        if (!found.item.children) {
+            found.item.children = [];
+        }
+
+        found.item.children.push(newItem);
+        saveTodos();
+        renderActionItems();
+    }
+}
+
+// Toggle action item completion
+function toggleActionItem(itemId) {
+    const todo = todos[currentTodoIndex];
+    const found = findActionItem(todo.actionItems, itemId);
+
+    if (found) {
+        found.item.completed = !found.item.completed;
+        saveTodos();
+        renderActionItems();
+    }
+}
+
+// Delete action item
+function deleteActionItem(itemId) {
+    const todo = todos[currentTodoIndex];
+    const found = findActionItem(todo.actionItems, itemId);
+
+    if (found) {
+        const index = found.parent.indexOf(found.item);
+        if (index > -1) {
+            found.parent.splice(index, 1);
+            saveTodos();
+            renderActionItems();
+        }
+    }
+}
+
+// Promote action item to main task
+function promoteActionItem(itemId) {
+    const todo = todos[currentTodoIndex];
+    const found = findActionItem(todo.actionItems, itemId);
+
+    if (found) {
+        // Create new main task
+        const newTodo = {
+            text: found.item.text,
+            completed: false,
+            notes: '',
+            priority: 'medium',
+            createdAt: Date.now(),
+            inProgress: false,
+            actionItems: found.item.children || [] // Preserve children as action items
+        };
+
+        todos.push(newTodo);
+
+        // Remove from current action items
+        const index = found.parent.indexOf(found.item);
+        if (index > -1) {
+            found.parent.splice(index, 1);
+        }
+
+        saveTodos();
+        renderActionItems();
+
+        // Show confirmation
+        alert('Action item promoted to main task!');
+    }
+}
+
+// Show granulate input for an item
+function showGranulateInput(itemId) {
+    actionItemInputStates[itemId] = true;
+    renderActionItems();
+
+    // Focus the input after render
+    setTimeout(() => {
+        const input = document.getElementById(`granulate-input-${itemId}`);
+        if (input) {
+            input.focus();
+        }
+    }, 0);
+}
+
+// Hide granulate input
+function hideGranulateInput(itemId) {
+    delete actionItemInputStates[itemId];
+    renderActionItems();
+}
+
+// Render action items recursively
+function renderActionItems() {
+    const container = document.getElementById('actionItemsContainer');
+    const todo = todos[currentTodoIndex];
+
+    if (!todo || !todo.actionItems) {
+        container.innerHTML = '<div class="no-action-items">No action items yet</div>';
+        return;
+    }
+
+    if (todo.actionItems.length === 0) {
+        container.innerHTML = '<div class="no-action-items">No action items yet</div>';
+        return;
+    }
+
+    container.innerHTML = '';
+
+    function renderItem(item, level) {
+        const itemDiv = document.createElement('div');
+        itemDiv.className = `action-item action-item-level-${level}`;
+        itemDiv.style.paddingLeft = `${level * 20}px`;
+
+        // Checkbox
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = item.completed;
+        checkbox.className = 'action-item-checkbox';
+        checkbox.addEventListener('change', () => toggleActionItem(item.id));
+
+        // Text label
+        const label = document.createElement('span');
+        label.className = `action-item-text ${item.completed ? 'completed' : ''}`;
+        label.textContent = item.text;
+
+        // Buttons container
+        const buttonsDiv = document.createElement('div');
+        buttonsDiv.className = 'action-item-buttons';
+
+        // Granulate button
+        const granulateBtn = document.createElement('button');
+        granulateBtn.innerHTML = '⊕';
+        granulateBtn.className = 'granulate-btn';
+        granulateBtn.title = 'Break into sub-tasks';
+        granulateBtn.addEventListener('click', () => showGranulateInput(item.id));
+
+        // Promote button
+        const promoteBtn = document.createElement('button');
+        promoteBtn.innerHTML = '↗';
+        promoteBtn.className = 'promote-btn';
+        promoteBtn.title = 'Promote to main task';
+        promoteBtn.addEventListener('click', () => promoteActionItem(item.id));
+
+        // Delete button
+        const deleteBtn = document.createElement('button');
+        deleteBtn.innerHTML = '×';
+        deleteBtn.className = 'delete-action-btn';
+        deleteBtn.title = 'Delete';
+        deleteBtn.addEventListener('click', () => deleteActionItem(item.id));
+
+        buttonsDiv.appendChild(granulateBtn);
+        buttonsDiv.appendChild(promoteBtn);
+        buttonsDiv.appendChild(deleteBtn);
+
+        itemDiv.appendChild(checkbox);
+        itemDiv.appendChild(label);
+        itemDiv.appendChild(buttonsDiv);
+
+        container.appendChild(itemDiv);
+
+        // Show granulate input if active
+        if (actionItemInputStates[item.id]) {
+            const inputDiv = document.createElement('div');
+            inputDiv.className = 'granulate-input-container';
+            inputDiv.style.paddingLeft = `${(level + 1) * 20}px`;
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.id = `granulate-input-${item.id}`;
+            input.className = 'granulate-input';
+            input.placeholder = 'Add sub-task...';
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    addGranularItem(item.id, input.value);
+                    hideGranulateInput(item.id);
+                } else if (e.key === 'Escape') {
+                    hideGranulateInput(item.id);
+                }
+            });
+
+            const addBtn = document.createElement('button');
+            addBtn.textContent = 'Add';
+            addBtn.className = 'granulate-add-btn';
+            addBtn.addEventListener('click', () => {
+                addGranularItem(item.id, input.value);
+                hideGranulateInput(item.id);
+            });
+
+            const cancelBtn = document.createElement('button');
+            cancelBtn.textContent = 'Cancel';
+            cancelBtn.className = 'granulate-cancel-btn';
+            cancelBtn.addEventListener('click', () => hideGranulateInput(item.id));
+
+            inputDiv.appendChild(input);
+            inputDiv.appendChild(addBtn);
+            inputDiv.appendChild(cancelBtn);
+
+            container.appendChild(inputDiv);
+        }
+
+        // Render children recursively
+        if (item.children && item.children.length > 0) {
+            item.children.forEach(child => renderItem(child, level + 1));
+        }
+    }
+
+    // Render all top-level items
+    todo.actionItems.forEach(item => renderItem(item, 0));
+}
 
 
 // Event listeners
