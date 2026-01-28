@@ -93,13 +93,16 @@ To-do-app/
 - ✅ Mark tasks as "In Progress" from planning page
 - ✅ Add new task input moved to bottom of list
 
-## Future Enhancements
+## Backlog
 
-- Categories/tags
-- Due dates
-- Search/filter
-- Enhanced UI design
-- Keyboard shortcuts
+### Features
+- [ ] Categories/tags - Add tagging system to organize tasks
+- [ ] Due dates - Add due date picker and display for tasks
+- [ ] Search/filter - Add ability to search and filter the task list
+- [ ] Keyboard shortcuts - Add keyboard navigation and shortcuts
+
+### UI/UX
+- [ ] Enhanced UI design - Improve overall visual design
 
 ## Project-Specific Conventions
 
@@ -110,4 +113,4 @@ To-do-app/
 
 ---
 
-Last updated: 2026-01-01
+Last updated: 2026-01-28
