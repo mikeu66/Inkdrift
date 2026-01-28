@@ -19,6 +19,10 @@ try {
 
 // Claude client will be initialized after app is ready (needs access to userData path)
 
+// Lazy initialization state - prevents Keychain popup on startup
+let claudeClientInitialized = false;
+let migrationChecked = false;
+
 // SECURITY: Rate limiting for Claude API calls
 const rateLimiter = {
     calls: [],
@@ -124,6 +128,56 @@ function removeApiKeySecure() {
         console.error('Error removing secure API key:', error);
         return false;
     }
+}
+
+// Fast check if secure key file exists (NO Keychain access)
+// Use this for UI checks to avoid triggering the macOS permission popup
+function hasSecureKeyFile() {
+    try {
+        const secureKeyPath = getSecureKeyPath();
+        return fs.existsSync(secureKeyPath);
+    } catch {
+        return false;
+    }
+}
+
+// Check if there's a plain-text API key that needs migration (NO Keychain access)
+function needsApiKeyMigration() {
+    try {
+        const settingsPath = getSettingsPath();
+        if (!fs.existsSync(settingsPath)) {
+            return false;
+        }
+        const data = fs.readFileSync(settingsPath, 'utf8');
+        const settings = JSON.parse(data);
+        return !!settings.anthropicApiKey;
+    } catch {
+        return false;
+    }
+}
+
+// Ensure Claude client is initialized (lazy initialization)
+// Only call this when user explicitly needs Claude features
+function ensureClaudeClientInitialized() {
+    if (claudeClientInitialized) {
+        return claudeClient !== null;
+    }
+
+    claudeClientInitialized = true;
+
+    // Run migration if needed (only accesses Keychain if there's something to migrate)
+    if (!migrationChecked) {
+        migrationChecked = true;
+        if (needsApiKeyMigration()) {
+            console.log('Plain-text API key found, migrating to secure storage...');
+            migrateApiKeyToSecureStorage();
+        }
+    }
+
+    // Initialize the client (only accesses Keychain if secure key file exists)
+    initializeClaudeClient();
+
+    return claudeClient !== null;
 }
 
 // Migrate from old plain-text storage to secure storage
@@ -450,8 +504,11 @@ function setupIpcHandlers() {
     // Call Claude API for brainstorming
     ipcMain.handle('call-claude', async (event, params) => {
         try {
+            // Lazy initialize Claude client when first needed
+            ensureClaudeClientInitialized();
+
             if (!claudeClient) {
-                throw new Error('Claude client not initialized. Set ANTHROPIC_API_KEY environment variable.');
+                throw new Error('Claude client not initialized. Please configure your API key in Settings.');
             }
 
             // SECURITY: Rate limiting check
@@ -510,32 +567,36 @@ function setupIpcHandlers() {
         }
     });
 
-    // Check if Claude API is available
+    // Check if Claude API is available (uses fast check to avoid Keychain popup)
     ipcMain.handle('check-claude-available', async () => {
-        const secureKey = loadApiKeySecure();
-        const hasSecureKey = !!secureKey;
+        // Use fast file-existence check instead of decrypting (no Keychain access)
+        const hasSecureKey = hasSecureKeyFile();
         const hasEnvKey = !!process.env.ANTHROPIC_API_KEY;
+
+        // If client has been initialized, report actual status
+        // Otherwise, report potential availability based on key existence
         return {
-            available: claudeClient !== null,
+            available: claudeClientInitialized ? (claudeClient !== null) : (hasSecureKey || hasEnvKey),
             hasApiKey: hasSecureKey || hasEnvKey,
             keySource: hasSecureKey ? 'secure' : (hasEnvKey ? 'environment' : 'none'),
-            isEncrypted: hasSecureKey && safeStorage.isEncryptionAvailable()
+            isEncrypted: hasSecureKey
         };
     });
 
-    // Get settings (without exposing sensitive data fully)
+    // Get settings (uses fast check to avoid Keychain popup on startup)
     ipcMain.handle('get-settings', async () => {
-        const secureKey = loadApiKeySecure();
+        // Use fast file-existence check instead of decrypting (no Keychain access)
+        const hasSecureKey = hasSecureKeyFile();
         return {
-            hasApiKey: !!secureKey,
-            apiKeyPreview: secureKey
-                ? `${secureKey.substring(0, 7)}...${secureKey.slice(-4)}`
-                : null,
-            isEncrypted: safeStorage.isEncryptionAvailable()
+            hasApiKey: hasSecureKey,
+            // Don't show preview by default to avoid Keychain access
+            // The key preview will be shown after user explicitly tests/saves a key
+            apiKeyPreview: hasSecureKey ? '••••••••••••••••' : null,
+            isEncrypted: hasSecureKey
         };
     });
 
-    // Save API key (uses secure storage)
+    // Save API key (uses secure storage - triggers Keychain access intentionally)
     ipcMain.handle('save-api-key', async (event, apiKey) => {
         try {
             // Validate API key format (basic check)
@@ -543,25 +604,41 @@ function setupIpcHandlers() {
                 throw new Error('Invalid API key format');
             }
 
+            // Mark as initialized since we're explicitly accessing secure storage
+            claudeClientInitialized = true;
+
             if (apiKey && apiKey.trim()) {
-                // Save to secure storage
-                const saved = saveApiKeySecure(apiKey.trim());
+                const trimmedKey = apiKey.trim();
+                // Save to secure storage (triggers Keychain access - this is expected since user is explicitly saving)
+                const saved = saveApiKeySecure(trimmedKey);
                 if (!saved) {
                     throw new Error('Failed to save API key securely. Encryption may not be available.');
                 }
+
+                // Reinitialize Claude client with new key
+                const initialized = initializeClaudeClient();
+
+                return {
+                    success: true,
+                    claudeAvailable: initialized,
+                    isEncrypted: safeStorage.isEncryptionAvailable(),
+                    // Return preview since we already have the key
+                    apiKeyPreview: `${trimmedKey.substring(0, 7)}...${trimmedKey.slice(-4)}`
+                };
             } else {
                 // Remove from secure storage
                 removeApiKeySecure();
+
+                // Reset Claude client
+                claudeClient = null;
+
+                return {
+                    success: true,
+                    claudeAvailable: false,
+                    isEncrypted: false,
+                    apiKeyPreview: null
+                };
             }
-
-            // Reinitialize Claude client with new key
-            const initialized = initializeClaudeClient();
-
-            return {
-                success: true,
-                claudeAvailable: initialized,
-                isEncrypted: safeStorage.isEncryptionAvailable()
-            };
         } catch (error) {
             console.error('Error saving API key:', error);
             return {
@@ -690,11 +767,11 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
-    // Migrate any existing plain-text API keys to secure storage
-    migrateApiKeyToSecureStorage();
-
-    // Initialize Claude client from secure storage or environment
-    initializeClaudeClient();
+    // NOTE: Claude client and API key migration are now lazy-loaded
+    // This prevents the macOS Keychain permission popup from appearing on startup
+    // for users who don't use Claude features. Access happens only when:
+    // 1. User explicitly saves/tests an API key in Settings
+    // 2. User tries to use Claude features (brainstorming)
 
     // Setup secure IPC handlers
     setupIpcHandlers();
