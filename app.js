@@ -923,29 +923,6 @@ function createActionItemElement(item, index) {
     hoursContainer.appendChild(hoursInput);
     hoursContainer.appendChild(hoursLabel);
 
-    // Elaborate button
-    const elaborateBtn = document.createElement('button');
-    elaborateBtn.className = `action-item-elaborate-btn ${item.isExpanded ? 'expanded' : ''}`;
-
-    // If item has elaboration, allow expand/collapse regardless of Claude availability
-    // Otherwise, only enable if Claude is available
-    const hasElaboration = item.elaboration && item.elaboration.trim();
-    const canElaborate = hasElaboration || appState.claudeAvailable;
-
-    if (canElaborate) {
-        elaborateBtn.disabled = false;
-        elaborateBtn.textContent = item.isExpanded ? 'Collapse' : 'Elaborate';
-        elaborateBtn.title = item.isExpanded ? 'Hide details' : 'Show detailed summary';
-        elaborateBtn.classList.remove('ai-disabled');
-    } else {
-        elaborateBtn.disabled = true;
-        elaborateBtn.textContent = 'API Key Required';
-        elaborateBtn.title = 'Configure API key in Settings to enable elaboration';
-        elaborateBtn.classList.add('ai-disabled');
-    }
-
-    elaborateBtn.addEventListener('click', () => elaborateActionItem(item.id, elaborateBtn, elaborationArea));
-
     // Delete button
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'action-item-delete-btn';
@@ -969,20 +946,10 @@ function createActionItemElement(item, index) {
     li.appendChild(orderNum);
     li.appendChild(textInput);
     li.appendChild(hoursContainer);
-    li.appendChild(elaborateBtn);
     li.appendChild(granulateBtn);
     li.appendChild(deleteBtn);
 
-    // Elaboration dropdown area
-    const elaborationArea = document.createElement('div');
-    elaborationArea.className = `action-item-elaboration ${item.isExpanded ? 'expanded' : ''}`;
-
-    if (item.elaboration) {
-        elaborationArea.innerHTML = renderElaborationMarkdown(item.elaboration);
-    }
-
     container.appendChild(li);
-    container.appendChild(elaborationArea);
 
     // Children sub-tasks area
     if (item.children && item.children.length > 0) {
@@ -1020,110 +987,6 @@ function createActionItemElement(item, index) {
     }
 
     return container;
-}
-
-function renderElaborationMarkdown(text) {
-    try {
-        if (typeof marked !== 'undefined') {
-            marked.setOptions({
-                breaks: true,
-                gfm: true
-            });
-            return marked.parse(text);
-        }
-    } catch (error) {
-        console.error('Markdown parse error:', error);
-    }
-    // Fallback: basic formatting
-    return `<p>${text.replace(/\n/g, '<br>')}</p>`;
-}
-
-async function elaborateActionItem(id, btn, elaborationArea) {
-    const todo = findTodoById(appState.currentTodoId);
-    if (!todo || !todo.actionItems) return;
-
-    const item = todo.actionItems.find(i => i.id === id);
-    if (!item) return;
-
-    // If already expanded and has elaboration, just toggle visibility
-    if (item.isExpanded && item.elaboration) {
-        item.isExpanded = false;
-        btn.textContent = 'Elaborate';
-        btn.title = 'Show detailed summary';
-        btn.classList.remove('expanded');
-        elaborationArea.classList.remove('expanded');
-        saveTodos();
-        return;
-    }
-
-    // If collapsed but has elaboration, just expand
-    if (!item.isExpanded && item.elaboration) {
-        item.isExpanded = true;
-        btn.textContent = 'Collapse';
-        btn.title = 'Hide details';
-        btn.classList.add('expanded');
-        elaborationArea.classList.add('expanded');
-        saveTodos();
-        return;
-    }
-
-    // Generate new elaboration
-    btn.disabled = true;
-    btn.textContent = 'Loading...';
-    elaborationArea.innerHTML = '<div class="action-item-elaboration-loading"><div class="action-items-spinner"></div><span>Generating summary...</span></div>';
-    elaborationArea.classList.add('expanded');
-
-    try {
-        const claudeStatus = await window.electronAPI.checkClaudeAvailable();
-        if (!claudeStatus.available) {
-            throw new Error('Claude API not available');
-        }
-
-        const prompt = `Based on this project plan context and the specific action item, provide a helpful elaboration in markdown format.
-
-Project Plan:
-${todo.brainstormResult}
-
-Action Item: "${item.text}"
-Estimated Hours: ${item.hoursNeeded}
-
-Format your response as follows:
-1. **Summary** - A brief overview of what this task involves. Be concise for simple tasks, more detailed for complex ones.
-2. **Key Considerations** - A bulleted list of important points. Include only what's relevant (could be 2-5 points depending on complexity).
-3. **Optional sections** (only include if relevant to this specific task):
-   - **Prerequisites** - If there are dependencies or things that must be done first
-   - **Watch Out For** - Potential gotchas, common mistakes, or blockers
-
-Adapt the detail level to the task complexity. Simple tasks get brief elaborations; complex tasks get thorough breakdowns.`;
-
-        const response = await window.electronAPI.callClaude({
-            systemPrompt: 'You are a helpful project assistant. Provide practical, well-structured elaborations for action items. Be concise where appropriate and thorough where needed.',
-            messages: [{ role: 'user', content: prompt }],
-            options: {
-                model: 'claude-3-haiku-20240307',
-                max_tokens: 512
-            }
-        });
-
-        if (!response.success) {
-            throw new Error(response.error || 'Failed to generate elaboration');
-        }
-
-        item.elaboration = response.text.trim();
-        item.isExpanded = true;
-        elaborationArea.innerHTML = renderElaborationMarkdown(item.elaboration);
-        btn.textContent = 'Collapse';
-        btn.title = 'Hide details';
-        btn.classList.add('expanded');
-        await saveTodos();
-
-    } catch (error) {
-        console.error('Elaborate error:', error);
-        elaborationArea.innerHTML = `<span class="action-item-elaboration-error">Failed to generate: ${error.message}</span>`;
-        showToast(error.message, 'error');
-    } finally {
-        btn.disabled = false;
-    }
 }
 
 function updateActionItem(id, updates) {
