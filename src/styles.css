@@ -658,8 +658,11 @@ h2 {
 
 .action-item-text {
     flex: 1;
+    min-width: 0;
     color: #e0e0e0;
     font-size: 14px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .action-item-text.completed {
