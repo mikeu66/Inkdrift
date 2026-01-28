@@ -431,8 +431,8 @@ body {
 }
 
 .app-logo {
-    width: 40px;
-    height: 40px;
+    width: 64px;
+    height: 64px;
     object-fit: contain;
     flex-shrink: 0;
 }
@@ -3020,4 +3020,171 @@ input[type="checkbox"] {
 [data-theme="light"] .action-item-elaborate-btn.ai-disabled {
     background: rgba(160, 160, 176, 0.3);
     border-color: rgba(160, 160, 176, 0.4);
+}
+/* ==================== Granulate & Manual Add Styles ==================== */
+
+/* Granulate Button (AI break into sub-tasks) */
+.action-item-granulate-btn {
+    padding: 4px 10px;
+    font-size: 14px;
+    background: rgba(74, 158, 255, 0.15);
+    color: #4a9eff;
+    border: 1px solid rgba(74, 158, 255, 0.3);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.action-item-granulate-btn:hover:not(:disabled) {
+    background: rgba(74, 158, 255, 0.25);
+    border-color: rgba(74, 158, 255, 0.5);
+}
+
+.action-item-granulate-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.action-item-granulate-btn.loading {
+    opacity: 0.7;
+}
+
+.action-item-granulate-btn.ai-disabled {
+    background: rgba(74, 74, 106, 0.2);
+    border-color: rgba(74, 74, 106, 0.3);
+    color: var(--text-muted);
+}
+
+/* Children Sub-tasks */
+.action-item-children {
+    margin-left: 30px;
+    padding-left: 15px;
+    border-left: 2px solid rgba(74, 158, 255, 0.3);
+}
+
+.action-item-child {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    margin-bottom: 4px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.action-item-child:hover {
+    background-color: var(--bg-hover);
+}
+
+.action-item-child-checkbox {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.action-item-child-text {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.action-item-child.completed .action-item-child-text {
+    text-decoration: line-through;
+    color: var(--text-muted);
+}
+
+.action-item-child-delete {
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    font-size: 16px;
+    background: transparent;
+    color: var(--text-muted);
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.action-item-child:hover .action-item-child-delete {
+    opacity: 1;
+}
+
+.action-item-child-delete:hover {
+    background-color: rgba(255, 68, 68, 0.2);
+    color: #ff4444;
+}
+
+/* Manual Add Input (inside AI action items section) */
+.action-items-manual-add {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border-color);
+}
+
+.action-items-manual-add input {
+    flex: 1;
+    padding: 10px;
+    font-size: 14px;
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-primary);
+}
+
+.action-items-manual-add input::placeholder {
+    color: var(--text-muted);
+}
+
+.action-items-manual-add input:focus {
+    outline: none;
+    border-color: #4a9eff;
+}
+
+.action-items-manual-add button {
+    padding: 10px 20px;
+    font-size: 14px;
+    background-color: #4a9eff;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.action-items-manual-add button:hover {
+    background-color: #3a8eef;
+}
+
+/* Light mode overrides for new components */
+[data-theme="light"] .action-item-granulate-btn {
+    background: rgba(74, 158, 255, 0.1);
+    border-color: rgba(74, 158, 255, 0.25);
+}
+
+[data-theme="light"] .action-item-granulate-btn:hover:not(:disabled) {
+    background: rgba(74, 158, 255, 0.2);
+}
+
+[data-theme="light"] .action-item-children {
+    border-left-color: rgba(74, 158, 255, 0.25);
+}
+
+[data-theme="light"] .action-item-child-text {
+    color: var(--text-primary);
+}
+
+[data-theme="light"] .action-items-manual-add input {
+    background: linear-gradient(135deg, #D5DEE9 0%, #D0DAEA 100%);
+    border: none;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.09) inset;
 }

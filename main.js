@@ -385,10 +385,32 @@ function validateTodos(todos) {
             if (todo.actionItems.length > 1000) {
                 throw new Error(`Invalid todo at index ${index}: too many action items (max 1000)`);
             }
+            // Validate children sub-arrays on each action item
+            todo.actionItems.forEach((item, itemIndex) => {
+                if (item.children !== undefined) {
+                    if (!Array.isArray(item.children)) {
+                        throw new Error(`Invalid todo at index ${index}, action item ${itemIndex}: children must be an array`);
+                    }
+                    if (item.children.length > 50) {
+                        throw new Error(`Invalid todo at index ${index}, action item ${itemIndex}: too many children (max 50)`);
+                    }
+                    item.children.forEach((child, childIndex) => {
+                        if (typeof child !== 'object' || child === null) {
+                            throw new Error(`Invalid todo at index ${index}, action item ${itemIndex}, child ${childIndex}: must be an object`);
+                        }
+                        if (typeof child.text !== 'string') {
+                            throw new Error(`Invalid todo at index ${index}, action item ${itemIndex}, child ${childIndex}: text must be a string`);
+                        }
+                        if (child.text.length > 10000) {
+                            throw new Error(`Invalid todo at index ${index}, action item ${itemIndex}, child ${childIndex}: text too long (max 10000 chars)`);
+                        }
+                    });
+                }
+            });
         }
 
         // SECURITY: Check for unexpected properties (prevent prototype pollution)
-        const allowedKeys = ['id', 'text', 'completed', 'notes', 'priority', 'inProgress', 'createdAt', 'subtasks', 'stage', 'deletedAt', 'order', 'brainstormResult', 'actionItems'];
+        const allowedKeys = ['id', 'text', 'completed', 'notes', 'priority', 'inProgress', 'createdAt', 'subtasks', 'stage', 'deletedAt', 'order', 'brainstormResult', 'actionItems', 'manualActionItems'];
         const todoKeys = Object.keys(todo);
         for (const key of todoKeys) {
             if (!allowedKeys.includes(key)) {

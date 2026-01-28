@@ -604,6 +604,7 @@ function renderDetailView() {
         planningResultSection.style.display = 'none';
         actionItemsSection.style.display = 'none';
     }
+
 }
 
 function renderStageProgress(currentStage) {
@@ -798,7 +799,8 @@ async function generateActionItems() {
             text: item.text,
             hoursNeeded: item.hoursNeeded || 1,
             completed: false,
-            order: index
+            order: index,
+            children: []
         }));
 
         await saveTodos();
@@ -951,11 +953,24 @@ function createActionItemElement(item, index) {
     deleteBtn.title = 'Delete action item';
     deleteBtn.addEventListener('click', () => deleteActionItem(item.id));
 
+    // Granulate button (AI break into sub-tasks)
+    const granulateBtn = document.createElement('button');
+    granulateBtn.className = 'action-item-granulate-btn';
+    granulateBtn.textContent = '⊕';
+    granulateBtn.title = 'Break into sub-tasks (AI)';
+    if (!appState.claudeAvailable) {
+        granulateBtn.disabled = true;
+        granulateBtn.title = 'Configure API key to enable';
+        granulateBtn.classList.add('ai-disabled');
+    }
+    granulateBtn.addEventListener('click', () => granulateActionItem(item.id, granulateBtn));
+
     li.appendChild(checkbox);
     li.appendChild(orderNum);
     li.appendChild(textInput);
     li.appendChild(hoursContainer);
     li.appendChild(elaborateBtn);
+    li.appendChild(granulateBtn);
     li.appendChild(deleteBtn);
 
     // Elaboration dropdown area
@@ -968,6 +983,41 @@ function createActionItemElement(item, index) {
 
     container.appendChild(li);
     container.appendChild(elaborationArea);
+
+    // Children sub-tasks area
+    if (item.children && item.children.length > 0) {
+        const childrenArea = document.createElement('div');
+        childrenArea.className = 'action-item-children';
+
+        item.children.forEach(child => {
+            const childDiv = document.createElement('div');
+            childDiv.className = `action-item-child ${child.completed ? 'completed' : ''}`;
+
+            const childCheckbox = document.createElement('input');
+            childCheckbox.type = 'checkbox';
+            childCheckbox.checked = child.completed;
+            childCheckbox.className = 'action-item-child-checkbox';
+            childCheckbox.addEventListener('change', () => toggleChildComplete(item.id, child.id));
+
+            const childText = document.createElement('span');
+            childText.className = 'action-item-child-text';
+            childText.textContent = child.text;
+
+            const childDeleteBtn = document.createElement('button');
+            childDeleteBtn.className = 'action-item-child-delete';
+            childDeleteBtn.textContent = '×';
+            childDeleteBtn.title = 'Delete sub-task';
+            childDeleteBtn.addEventListener('click', () => deleteChild(item.id, child.id));
+
+            childDiv.appendChild(childCheckbox);
+            childDiv.appendChild(childText);
+            childDiv.appendChild(childDeleteBtn);
+
+            childrenArea.appendChild(childDiv);
+        });
+
+        container.appendChild(childrenArea);
+    }
 
     return container;
 }
@@ -1988,4 +2038,151 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('saveApiKeyBtn').addEventListener('click', saveApiKey);
     document.getElementById('removeApiKeyBtn').addEventListener('click', removeApiKey);
     document.getElementById('anthropicLink').addEventListener('click', openAnthropicConsole);
+
+    // Manual action item add (inside AI action items section)
+    document.getElementById('addManualActionItemBtn').addEventListener('click', addManualToActionItems);
+    document.getElementById('manualActionItemInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            addManualToActionItems();
+        }
+    });
 });
+
+// ===================================
+// MANUAL ADD TO ACTION ITEMS
+// ===================================
+function addManualToActionItems() {
+    const input = document.getElementById('manualActionItemInput');
+    const text = input.value.trim();
+
+    if (text === '' || !appState.currentTodoId) {
+        return;
+    }
+
+    const todo = findTodoById(appState.currentTodoId);
+    if (!todo) return;
+
+    if (!todo.actionItems) {
+        todo.actionItems = [];
+    }
+
+    const newItem = {
+        id: generateUUID(),
+        text: text,
+        hoursNeeded: 1,
+        completed: false,
+        order: todo.actionItems.length,
+        children: []
+    };
+
+    todo.actionItems.push(newItem);
+    input.value = '';
+    saveTodos();
+    renderActionItems();
+}
+
+// ===================================
+// AI GRANULATE (BREAK INTO SUB-TASKS)
+// ===================================
+async function granulateActionItem(id, btn) {
+    const todo = findTodoById(appState.currentTodoId);
+    if (!todo || !todo.actionItems) return;
+
+    const item = todo.actionItems.find(i => i.id === id);
+    if (!item) return;
+
+    // If children already exist, confirm before regenerating
+    if (item.children && item.children.length > 0) {
+        if (!confirm('This item already has sub-tasks. Regenerate them?')) {
+            return;
+        }
+    }
+
+    // Show loading state
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '...';
+    btn.classList.add('loading');
+
+    try {
+        const claudeStatus = await window.electronAPI.checkClaudeAvailable();
+        if (!claudeStatus.available) {
+            throw new Error('Claude API not available');
+        }
+
+        const prompt = `Break this action item into 3-5 specific, actionable sub-tasks.
+
+Action Item: "${item.text}"
+Estimated Hours: ${item.hoursNeeded}
+${todo.brainstormResult ? `\nProject Context:\n${todo.brainstormResult}` : ''}
+
+Return ONLY a valid JSON array with no other text:
+[{"text": "Sub-task description here"}, ...]`;
+
+        const response = await window.electronAPI.callClaude({
+            systemPrompt: 'You are a project planning assistant. Break action items into concrete sub-tasks. Return only valid JSON.',
+            messages: [{ role: 'user', content: prompt }],
+            options: {
+                model: 'claude-3-haiku-20240307',
+                max_tokens: 1024
+            }
+        });
+
+        if (!response.success) {
+            throw new Error(response.error || 'Failed to generate sub-tasks');
+        }
+
+        // Parse JSON response - handle potential markdown code blocks
+        let jsonText = response.text.trim();
+        if (jsonText.startsWith('```')) {
+            jsonText = jsonText.replace(/```json?\n?/g, '').replace(/```$/g, '').trim();
+        }
+
+        const subTasks = JSON.parse(jsonText);
+        item.children = subTasks.map(st => ({
+            id: generateUUID(),
+            text: st.text,
+            completed: false
+        }));
+
+        await saveTodos();
+        renderActionItems();
+        showToast('Sub-tasks generated', 'success');
+    } catch (error) {
+        console.error('Granulate error:', error);
+        showToast(error.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+        btn.classList.remove('loading');
+    }
+}
+
+// Toggle child sub-task completion
+function toggleChildComplete(parentId, childId) {
+    const todo = findTodoById(appState.currentTodoId);
+    if (!todo || !todo.actionItems) return;
+
+    const parent = todo.actionItems.find(i => i.id === parentId);
+    if (!parent || !parent.children) return;
+
+    const child = parent.children.find(c => c.id === childId);
+    if (!child) return;
+
+    child.completed = !child.completed;
+    saveTodos();
+    renderActionItems();
+}
+
+// Delete child sub-task
+function deleteChild(parentId, childId) {
+    const todo = findTodoById(appState.currentTodoId);
+    if (!todo || !todo.actionItems) return;
+
+    const parent = todo.actionItems.find(i => i.id === parentId);
+    if (!parent || !parent.children) return;
+
+    parent.children = parent.children.filter(c => c.id !== childId);
+    saveTodos();
+    renderActionItems();
+}

@@ -4,3 +4,11 @@ build/
 *.log
 .DS_Store
 .env
+
+# Security and internal planning docs
+SECURITY_FINDINGS.md
+BACKLOG.md
+
+# Build artifacts
+*.icns
+*-scaled.png
