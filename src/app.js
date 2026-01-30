@@ -241,53 +241,6 @@ function toggleTodo(index) {
     render();
 }
 
-// Toggle subtask completion and auto-complete parent if all subtasks done
-function toggleSubtask(todoIndex, subtaskIndex) {
-    const todo = todos[todoIndex];
-    if (!todo.subtasks || !todo.subtasks[subtaskIndex]) return;
-
-    todo.subtasks[subtaskIndex].completed = !todo.subtasks[subtaskIndex].completed;
-
-    // Auto-complete parent task if all subtasks are completed
-    if (todo.subtasks.length > 0 && todo.subtasks.every(st => st.completed)) {
-        todo.completed = true;
-    }
-
-    saveTodos();
-    render();
-}
-
-// Add a new subtask to a todo
-function addSubtask(todoIndex) {
-    const input = document.getElementById('subtaskInput');
-    const text = input.value.trim();
-
-    if (text === '') return;
-
-    if (!todos[todoIndex].subtasks) {
-        todos[todoIndex].subtasks = [];
-    }
-
-    todos[todoIndex].subtasks.push({
-        text: text,
-        completed: false,
-        createdAt: Date.now()
-    });
-
-    input.value = '';
-    saveTodos();
-    render();
-}
-
-// Delete a subtask
-function deleteSubtask(todoIndex, subtaskIndex) {
-    if (!todos[todoIndex].subtasks) return;
-
-    todos[todoIndex].subtasks.splice(subtaskIndex, 1);
-    saveTodos();
-    render();
-}
-
 // Delete a todo
 function deleteTodo(index) {
     todos.splice(index, 1);
@@ -354,9 +307,6 @@ function renderDetailView() {
         saveTodos();
     };
 
-    // Render subtasks
-    renderSubtasks(todo);
-
     // Set the notes
     const notesInput = document.getElementById('notesInput');
     notesInput.value = todo.notes || '';
@@ -369,49 +319,6 @@ function renderDetailView() {
 
     // Render action items
     renderActionItems();
-}
-
-// Render subtasks section
-function renderSubtasks(todo) {
-    const subtasksList = document.getElementById('subtasksList');
-    subtasksList.innerHTML = '';
-
-    const subtasks = todo.subtasks || [];
-
-    subtasks.forEach((subtask, subtaskIndex) => {
-        const li = document.createElement('li');
-        li.className = `subtask-item ${subtask.completed ? 'completed' : ''}`;
-
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.checked = subtask.completed;
-        checkbox.className = 'subtask-checkbox';
-        checkbox.addEventListener('change', () => toggleSubtask(currentTodoIndex, subtaskIndex));
-
-        const label = document.createElement('span');
-        label.className = 'subtask-text';
-        label.textContent = subtask.text;
-
-        const deleteBtn = document.createElement('button');
-        deleteBtn.textContent = '×';
-        deleteBtn.className = 'subtask-delete-btn';
-        deleteBtn.addEventListener('click', () => deleteSubtask(currentTodoIndex, subtaskIndex));
-
-        li.appendChild(checkbox);
-        li.appendChild(label);
-        li.appendChild(deleteBtn);
-        subtasksList.appendChild(li);
-    });
-
-    // Show completion progress if there are subtasks
-    const progressIndicator = document.getElementById('subtaskProgress');
-    if (subtasks.length > 0) {
-        const completed = subtasks.filter(st => st.completed).length;
-        progressIndicator.textContent = `${completed}/${subtasks.length} completed`;
-        progressIndicator.style.display = 'block';
-    } else {
-        progressIndicator.style.display = 'none';
-    }
 }
 
 // Open detail view for a todo
@@ -857,16 +764,6 @@ document.getElementById('todoInput').addEventListener('keypress', (e) => {
 document.getElementById('backBtn').addEventListener('click', backToList);
 document.getElementById('backBtnCompleted').addEventListener('click', backToList);
 document.getElementById('viewCompletedBtn').addEventListener('click', openCompletedView);
-document.getElementById('addSubtaskBtn').addEventListener('click', () => {
-    if (currentTodoIndex !== null) {
-        addSubtask(currentTodoIndex);
-    }
-});
-document.getElementById('subtaskInput').addEventListener('keypress', (e) => {
-    if (e.key === 'Enter' && currentTodoIndex !== null) {
-        addSubtask(currentTodoIndex);
-    }
-});
 
 
 // Load todos when page loads
