@@ -100,6 +100,7 @@ To-do-app/
 - [ ] Due dates - Add due date picker and display for tasks
 - [ ] Search/filter - Add ability to search and filter the task list
 - [ ] Keyboard shortcuts - Add keyboard navigation and shortcuts
+- [ ] Multiple choice interface option - Add multiple choice selection interface for tasks
 
 ### UI/UX
 - [ ] Enhanced UI design - Improve overall visual design

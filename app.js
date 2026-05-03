@@ -815,6 +815,44 @@ async function generateActionItems() {
     }
 }
 
+// Calculate total progress for action items (including children)
+function calculateActionItemProgress(items) {
+    let total = 0, completed = 0;
+
+    function countRecursive(itemList) {
+        itemList.forEach(item => {
+            total++;
+            if (item.completed) completed++;
+            if (item.children?.length > 0) {
+                countRecursive(item.children);
+            }
+        });
+    }
+
+    countRecursive(items);
+    return { completed, total };
+}
+
+// Get progress of an item's children
+function getItemChildProgress(item) {
+    if (!item.children?.length) return null;
+    return calculateActionItemProgress(item.children);
+}
+
+// Show notification when task is auto-completed
+function showAutoCompleteNotification() {
+    const notification = document.createElement('div');
+    notification.className = 'auto-complete-notification';
+    notification.textContent = 'Task completed (all action items done)';
+    document.body.appendChild(notification);
+
+    setTimeout(() => notification.classList.add('visible'), 10);
+    setTimeout(() => {
+        notification.classList.remove('visible');
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
 function renderActionItems() {
     const todo = findTodoById(appState.currentTodoId);
     if (!todo) return;
@@ -837,6 +875,17 @@ function renderActionItems() {
     // Ensure actionItems array exists
     if (!todo.actionItems) {
         todo.actionItems = [];
+    }
+
+    // Update header with progress
+    const headerLabel = document.querySelector('.action-items-header label');
+    if (headerLabel) {
+        if (todo.actionItems.length === 0) {
+            headerLabel.textContent = 'Action Items:';
+        } else {
+            const progress = calculateActionItemProgress(todo.actionItems);
+            headerLabel.textContent = `Action Items (${progress.completed}/${progress.total} completed):`;
+        }
     }
 
     if (todo.actionItems.length === 0) {
@@ -899,6 +948,15 @@ function createActionItemElement(item, index) {
         }
     });
 
+    // Progress badge for items with children
+    let progressBadge = null;
+    const childProgress = getItemChildProgress(item);
+    if (childProgress) {
+        progressBadge = document.createElement('span');
+        progressBadge.className = 'progress-badge';
+        progressBadge.textContent = `(${childProgress.completed}/${childProgress.total})`;
+    }
+
     // Hours container
     const hoursContainer = document.createElement('div');
     hoursContainer.className = 'action-item-hours-container';
@@ -942,11 +1000,20 @@ function createActionItemElement(item, index) {
     }
     granulateBtn.addEventListener('click', () => granulateActionItem(item.id, granulateBtn));
 
+    // Promote button (create new task from action item)
+    const promoteBtn = document.createElement('button');
+    promoteBtn.className = 'action-item-promote-btn';
+    promoteBtn.textContent = '↗';
+    promoteBtn.title = 'Promote to main task';
+    promoteBtn.addEventListener('click', () => promoteActionItem(item.id));
+
     li.appendChild(checkbox);
     li.appendChild(orderNum);
     li.appendChild(textInput);
+    if (progressBadge) li.appendChild(progressBadge);
     li.appendChild(hoursContainer);
     li.appendChild(granulateBtn);
+    li.appendChild(promoteBtn);
     li.appendChild(deleteBtn);
 
     container.appendChild(li);
@@ -1024,8 +1091,49 @@ function toggleActionItemComplete(id) {
     if (!item) return;
 
     item.completed = !item.completed;
+
+    // Auto-complete parent task if all action items are done
+    const progress = calculateActionItemProgress(todo.actionItems);
+    if (progress.completed === progress.total && progress.total > 0 && !todo.completed) {
+        todo.completed = true;
+        showAutoCompleteNotification();
+    }
+
     saveTodos();
     renderActionItems();
+}
+
+// Promote action item to a new main task
+function promoteActionItem(id) {
+    const todo = findTodoById(appState.currentTodoId);
+    if (!todo || !todo.actionItems) return;
+
+    const itemIndex = todo.actionItems.findIndex(i => i.id === id);
+    if (itemIndex === -1) return;
+
+    const item = todo.actionItems[itemIndex];
+
+    // Create new main task
+    const newTodo = {
+        id: generateId(),
+        text: item.text,
+        completed: false,
+        notes: '',
+        priority: 'medium',
+        createdAt: Date.now(),
+        inProgress: false,
+        stage: 'brainstorm',
+        actionItems: item.children || []
+    };
+
+    appState.todos.push(newTodo);
+
+    // Remove from current action items
+    todo.actionItems.splice(itemIndex, 1);
+
+    saveTodos();
+    renderActionItems();
+    showToast('Action item promoted to main task!', 'success');
 }
 
 // ===================================
@@ -2033,6 +2141,14 @@ function toggleChildComplete(parentId, childId) {
     if (!child) return;
 
     child.completed = !child.completed;
+
+    // Auto-complete parent task if all action items are done
+    const progress = calculateActionItemProgress(todo.actionItems);
+    if (progress.completed === progress.total && progress.total > 0 && !todo.completed) {
+        todo.completed = true;
+        showAutoCompleteNotification();
+    }
+
     saveTodos();
     renderActionItems();
 }

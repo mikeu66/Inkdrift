@@ -508,7 +508,7 @@ h2 {
 
 .action-item {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 10px;
     padding: 10px;
     margin-bottom: 8px;
@@ -516,22 +516,43 @@ h2 {
     border: 1px solid #3a3a3a;
     border-radius: 4px;
     transition: background-color 0.2s;
-}
-
-.action-item:hover {
-    background-color: #252525;
+    min-height: 40px;
 }
 
 .action-item-level-0 {
     border-left: 3px solid #4a9eff;
+    background-color: #1a1a1a;
+}
+
+.action-item-level-0:hover {
+    background-color: #252525;
 }
 
 .action-item-level-1 {
     border-left: 3px solid #ffaa00;
+    background-color: #181818;
+}
+
+.action-item-level-1:hover {
+    background-color: #232323;
 }
 
 .action-item-level-2 {
     border-left: 3px solid #44ff44;
+    background-color: #161616;
+}
+
+.action-item-level-2:hover {
+    background-color: #212121;
+}
+
+.action-item-level-3 {
+    border-left: 3px solid #ff44ff;
+    background-color: #141414;
+}
+
+.action-item-level-3:hover {
+    background-color: #1f1f1f;
 }
 
 .action-item-checkbox {
@@ -539,6 +560,7 @@ h2 {
     height: 18px;
     cursor: pointer;
     flex-shrink: 0;
+    margin-top: 2px;
 }
 
 .action-item-text {
@@ -546,8 +568,9 @@ h2 {
     min-width: 0;
     color: #e0e0e0;
     font-size: 14px;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
+    word-break: break-word;
+    white-space: pre-wrap;
+    line-height: 1.4;
 }
 
 .action-item-text.completed {
@@ -555,10 +578,28 @@ h2 {
     color: #666;
 }
 
+.progress-badge {
+    font-size: 11px;
+    color: #888;
+    font-weight: normal;
+    margin-left: 6px;
+}
+
 .action-item-buttons {
     display: flex;
     gap: 6px;
-    flex-shrink: 0;
+    flex-shrink: 1;
+    min-width: fit-content;
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+}
+
+.action-item:hover .action-item-buttons {
+    opacity: 1;
+}
+
+.action-item.has-open-input .action-item-buttons {
+    opacity: 1;
 }
 
 .granulate-btn,
@@ -697,4 +738,25 @@ h2 {
 
 .add-action-item-btn:hover {
     background-color: #3a8eef;
+}
+
+/* Auto-complete notification */
+.auto-complete-notification {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #4caf50;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    z-index: 10000;
+    font-size: 14px;
+}
+
+.auto-complete-notification.visible {
+    opacity: 1;
 }

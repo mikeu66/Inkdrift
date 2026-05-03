@@ -482,6 +482,30 @@ document.addEventListener('click', () => {
 // Action Items functionality
 let actionItemInputStates = {}; // Track which items have open granulate inputs
 
+// Calculate total progress for action items
+function calculateActionItemProgress(items) {
+    let total = 0, completed = 0;
+
+    function countRecursive(itemList) {
+        itemList.forEach(item => {
+            total++;
+            if (item.completed) completed++;
+            if (item.children?.length > 0) {
+                countRecursive(item.children);
+            }
+        });
+    }
+
+    countRecursive(items);
+    return { completed, total };
+}
+
+// Get progress of an item's children
+function getItemChildProgress(item) {
+    if (!item.children?.length) return null;
+    return calculateActionItemProgress(item.children);
+}
+
 // Generate unique ID for action items
 function generateId() {
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
@@ -561,9 +585,31 @@ function toggleActionItem(itemId) {
 
     if (found) {
         found.item.completed = !found.item.completed;
+
+        // Auto-complete parent task if all action items are done
+        const progress = calculateActionItemProgress(todo.actionItems);
+        if (progress.completed === progress.total && progress.total > 0) {
+            todos[currentTodoIndex].completed = true;
+            showAutoCompleteNotification();
+        }
+
         saveTodos();
         renderActionItems();
     }
+}
+
+// Show notification when task is auto-completed
+function showAutoCompleteNotification() {
+    const notification = document.createElement('div');
+    notification.className = 'auto-complete-notification';
+    notification.textContent = 'Task completed (all action items done)';
+    document.body.appendChild(notification);
+
+    setTimeout(() => notification.classList.add('visible'), 10);
+    setTimeout(() => {
+        notification.classList.remove('visible');
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
 }
 
 // Delete action item
@@ -581,36 +627,52 @@ function deleteActionItem(itemId) {
     }
 }
 
-// Promote action item to main task
+// Find the nesting level of an action item
+function findActionItemLevel(items, targetId, currentLevel) {
+    for (let item of items) {
+        if (item.id === targetId) return currentLevel;
+        if (item.children?.length) {
+            const childLevel = findActionItemLevel(item.children, targetId, currentLevel + 1);
+            if (childLevel !== -1) return childLevel;
+        }
+    }
+    return -1;
+}
+
+// Promote action item (two-tier: nested → root, root → main task)
 function promoteActionItem(itemId) {
     const todo = todos[currentTodoIndex];
     const found = findActionItem(todo.actionItems, itemId);
+    if (!found) return;
 
-    if (found) {
-        // Create new main task
-        const newTodo = {
+    const level = findActionItemLevel(todo.actionItems, itemId, 0);
+
+    if (level === 0) {
+        // Root level → promote to main task
+        todos.push({
             text: found.item.text,
             completed: false,
             notes: '',
             priority: 'medium',
             createdAt: Date.now(),
             inProgress: false,
-            actionItems: found.item.children || [] // Preserve children as action items
-        };
+            actionItems: found.item.children || []
+        });
 
-        todos.push(newTodo);
-
-        // Remove from current action items
-        const index = found.parent.indexOf(found.item);
-        if (index > -1) {
-            found.parent.splice(index, 1);
-        }
-
+        found.parent.splice(found.parent.indexOf(found.item), 1);
         saveTodos();
         renderActionItems();
-
-        // Show confirmation
         alert('Action item promoted to main task!');
+    } else {
+        // Nested → promote to root level
+        todo.actionItems.push({
+            ...found.item,
+            children: found.item.children || []
+        });
+
+        found.parent.splice(found.parent.indexOf(found.item), 1);
+        saveTodos();
+        renderActionItems();
     }
 }
 
@@ -639,21 +701,35 @@ function renderActionItems() {
     const container = document.getElementById('actionItemsContainer');
     const todo = todos[currentTodoIndex];
 
+    // Update header with progress
+    const headerLabel = document.querySelector('.action-items-section > label');
+
     if (!todo || !todo.actionItems) {
         container.innerHTML = '<div class="no-action-items">No action items yet</div>';
+        if (headerLabel) headerLabel.textContent = 'Action Items:';
         return;
     }
 
     if (todo.actionItems.length === 0) {
         container.innerHTML = '<div class="no-action-items">No action items yet</div>';
+        if (headerLabel) headerLabel.textContent = 'Action Items:';
         return;
+    }
+
+    // Update header with progress count
+    const progress = calculateActionItemProgress(todo.actionItems);
+    if (headerLabel) {
+        headerLabel.textContent = `Action Items (${progress.completed}/${progress.total} completed):`;
     }
 
     container.innerHTML = '';
 
     function renderItem(item, level) {
         const itemDiv = document.createElement('div');
-        itemDiv.className = `action-item action-item-level-${level}`;
+        const hasOpenInput = actionItemInputStates[item.id];
+        const classes = ['action-item', `action-item-level-${level}`];
+        if (hasOpenInput) classes.push('has-open-input');
+        itemDiv.className = classes.join(' ');
         itemDiv.style.paddingLeft = `${level * 20}px`;
 
         // Checkbox
@@ -667,6 +743,15 @@ function renderActionItems() {
         const label = document.createElement('span');
         label.className = `action-item-text ${item.completed ? 'completed' : ''}`;
         label.textContent = item.text;
+
+        // Add inline progress badge for parent items
+        const childProgress = getItemChildProgress(item);
+        if (childProgress) {
+            const badge = document.createElement('span');
+            badge.className = 'progress-badge';
+            badge.textContent = ` (${childProgress.completed}/${childProgress.total})`;
+            label.appendChild(badge);
+        }
 
         // Buttons container
         const buttonsDiv = document.createElement('div');
@@ -683,7 +768,7 @@ function renderActionItems() {
         const promoteBtn = document.createElement('button');
         promoteBtn.innerHTML = '↗';
         promoteBtn.className = 'promote-btn';
-        promoteBtn.title = 'Promote to main task';
+        promoteBtn.title = level === 0 ? 'Promote to main task' : 'Promote to root level';
         promoteBtn.addEventListener('click', () => promoteActionItem(item.id));
 
         // Delete button
