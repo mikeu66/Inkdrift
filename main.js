@@ -817,7 +817,7 @@ function setupIpcHandlers() {
             const response = await claudeClient.messages.create({
                 model: options.model || 'claude-haiku-4-5',
                 max_tokens: options.max_tokens || 2048,
-                temperature: options.temperature || 1.0,
+                temperature: options.temperature !== undefined ? options.temperature : 1.0,
                 system: systemPrompt,
                 messages: messages.map(msg => ({
                     role: msg.role,
