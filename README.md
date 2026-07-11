@@ -21,6 +21,14 @@ A simple, dark-mode desktop to-do application built with Electron.
 - Persistent storage (tasks saved locally)
 - Dark mode UI
 - Runs as a native Mac application
+- AI features (brainstorming, plan generation, action items) with a choice of backend
+
+## AI Provider
+
+The AI features can run against either backend, selectable in Settings:
+
+- **Anthropic Claude** (cloud) — requires an API key from [console.anthropic.com](https://console.anthropic.com/), stored encrypted via the OS keychain.
+- **Ollama** (local, free) — no API key. Install from [ollama.com](https://ollama.com/), pull a model (e.g. `ollama pull llama3.2`), then pick it in Settings. Note: small local models (1–3B) produce noticeably simpler plans than Claude, and generation can be slow on CPU.
 
 ## Installation
 

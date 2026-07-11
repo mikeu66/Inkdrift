@@ -301,6 +301,131 @@ function saveSettings(settings) {
     }
 }
 
+// AI provider settings (non-sensitive, stored in settings.json)
+const DEFAULT_OLLAMA_BASE_URL = 'http://localhost:11434';
+
+function getAiProviderSettings() {
+    const settings = loadSettings();
+    return {
+        provider: settings.aiProvider === 'ollama' ? 'ollama' : 'anthropic',
+        ollamaBaseUrl: settings.ollamaBaseUrl || DEFAULT_OLLAMA_BASE_URL,
+        ollamaModel: settings.ollamaModel || ''
+    };
+}
+
+function validateOllamaBaseUrl(url) {
+    if (typeof url !== 'string' || !url.trim()) {
+        throw new Error('Ollama URL is required');
+    }
+    let parsed;
+    try {
+        parsed = new URL(url.trim());
+    } catch {
+        throw new Error('Invalid Ollama URL');
+    }
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+        throw new Error('Ollama URL must use http or https');
+    }
+    // Strip trailing slash so path joining is predictable
+    return parsed.origin + parsed.pathname.replace(/\/+$/, '');
+}
+
+// Ollama client (local HTTP API, no SDK needed)
+const OLLAMA_GENERATE_TIMEOUT_MS = 120000; // local generation can be slow
+const OLLAMA_PING_TIMEOUT_MS = 1500;
+const OLLAMA_TAGS_TIMEOUT_MS = 5000;
+
+async function fetchWithTimeout(url, options, timeoutMs) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+        return await fetch(url, { ...options, signal: controller.signal });
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+async function callOllama({ systemPrompt, messages, options = {} }, { ollamaBaseUrl, ollamaModel }) {
+    const body = {
+        model: ollamaModel,
+        stream: false,
+        messages: [
+            ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
+            ...messages.map(msg => ({ role: msg.role, content: msg.content }))
+        ],
+        options: {
+            num_predict: options.max_tokens || 2048,
+            temperature: options.temperature !== undefined ? options.temperature : 0.7
+        }
+    };
+    // Constrain output for parse-dependent callers. A JSON-schema format is
+    // used instead of format:'json' because the latter biases small models
+    // toward emitting a single object instead of the expected array.
+    if (options.responseFormat === 'json') {
+        body.format = {
+            type: 'array',
+            items: {
+                type: 'object',
+                properties: {
+                    text: { type: 'string' },
+                    hoursNeeded: { type: 'number' }
+                },
+                required: ['text'],
+                additionalProperties: true
+            }
+        };
+    }
+
+    const response = await fetchWithTimeout(`${ollamaBaseUrl}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+    }, OLLAMA_GENERATE_TIMEOUT_MS);
+
+    if (!response.ok) {
+        let detail = '';
+        try {
+            const errBody = await response.json();
+            detail = errBody.error || '';
+        } catch {
+            // Ignore unparseable error bodies
+        }
+        const err = new Error(detail || `Ollama request failed (HTTP ${response.status})`);
+        err.httpStatus = response.status;
+        throw err;
+    }
+
+    const data = await response.json();
+    if (data.message && typeof data.message.content === 'string' && data.message.content.length > 0) {
+        return data.message.content;
+    }
+    throw new Error('Empty response from Ollama');
+}
+
+async function fetchOllamaModels(ollamaBaseUrl) {
+    const response = await fetchWithTimeout(`${ollamaBaseUrl}/api/tags`, { method: 'GET' }, OLLAMA_TAGS_TIMEOUT_MS);
+    if (!response.ok) {
+        throw new Error(`Ollama request failed (HTTP ${response.status})`);
+    }
+    const data = await response.json();
+    return Array.isArray(data.models) ? data.models.map(m => m.name) : [];
+}
+
+function friendlyOllamaError(error, ollamaBaseUrl, ollamaModel) {
+    const message = error.message || '';
+    if (error.name === 'AbortError') {
+        return new Error('Ollama request timed out. The model may be too slow for this request.');
+    }
+    // Native fetch wraps network failures in TypeError with a cause
+    if (error instanceof TypeError || (error.cause && error.cause.code === 'ECONNREFUSED')) {
+        return new Error(`Cannot connect to Ollama at ${ollamaBaseUrl}. Is Ollama running? Start it with "ollama serve".`);
+    }
+    if (error.httpStatus === 404 || /model .* not found|not found, try pulling/i.test(message)) {
+        return new Error(`Model "${ollamaModel}" not found. Pull it with "ollama pull ${ollamaModel}".`);
+    }
+    return new Error(message || 'Unknown Ollama error');
+}
+
 // Initialize Claude client from secure storage or environment
 function initializeClaudeClient() {
     // Try secure storage first, then fall back to environment variable
@@ -637,9 +762,42 @@ function setupIpcHandlers() {
         }
     });
 
-    // Call Claude API for brainstorming
+    // Call the active AI provider (Anthropic Claude or local Ollama)
     ipcMain.handle('call-claude', async (event, params) => {
+        const aiSettings = getAiProviderSettings();
         try {
+            const { systemPrompt, messages, options = {} } = params;
+
+            // SECURITY: Input validation for API parameters (both providers)
+            if (systemPrompt && systemPrompt.length > 10000) {
+                throw new Error('System prompt too long (max 10000 characters)');
+            }
+            if (messages.length > 50) {
+                throw new Error('Too many messages (max 50)');
+            }
+            for (const msg of messages) {
+                if (typeof msg.content === 'string' && msg.content.length > 50000) {
+                    throw new Error('Message content too long (max 50000 characters)');
+                }
+            }
+
+            if (aiSettings.provider === 'ollama') {
+                // Local provider: no API key, no rate limiting.
+                // options.model from the renderer is intentionally ignored;
+                // the model comes from the Ollama settings instead.
+                if (!aiSettings.ollamaModel) {
+                    throw new Error('No Ollama model selected. Choose one in Settings.');
+                }
+
+                safeLog.log('[IPC] Calling Ollama...');
+                const text = await callOllama({ systemPrompt, messages, options }, aiSettings);
+                safeLog.log('[IPC] Ollama call successful');
+                return {
+                    success: true,
+                    text
+                };
+            }
+
             // Lazy initialize Claude client when first needed
             ensureClaudeClientInitialized();
 
@@ -651,21 +809,6 @@ function setupIpcHandlers() {
             if (!rateLimiter.canMakeCall()) {
                 const remaining = rateLimiter.getRemainingCalls();
                 throw new Error(`Rate limit exceeded. Please wait before making more requests. Remaining: ${remaining.perMinute}/min, ${remaining.perHour}/hour`);
-            }
-
-            const { systemPrompt, messages, options = {} } = params;
-
-            // SECURITY: Input validation for API parameters
-            if (systemPrompt && systemPrompt.length > 10000) {
-                throw new Error('System prompt too long (max 10000 characters)');
-            }
-            if (messages.length > 50) {
-                throw new Error('Too many messages (max 50)');
-            }
-            for (const msg of messages) {
-                if (typeof msg.content === 'string' && msg.content.length > 50000) {
-                    throw new Error('Message content too long (max 50000 characters)');
-                }
             }
 
             safeLog.log('[IPC] Calling Claude API for brainstorming...');
@@ -695,16 +838,51 @@ function setupIpcHandlers() {
             throw new Error('Empty response from Claude API');
 
         } catch (error) {
-            safeLog.error('[IPC] Error calling Claude API:', error);
+            safeLog.error('[IPC] Error calling AI provider:', error);
+            const friendly = aiSettings.provider === 'ollama'
+                ? friendlyOllamaError(error, aiSettings.ollamaBaseUrl, aiSettings.ollamaModel)
+                : error;
             return {
                 success: false,
-                error: error.message
+                error: friendly.message
             };
         }
     });
 
-    // Check if Claude API is available (uses fast check to avoid Keychain popup)
+    // Cache Ollama reachability so per-feature prechecks don't stack latency
+    let ollamaPingCache = { baseUrl: null, reachable: false, checkedAt: 0 };
+    const OLLAMA_PING_CACHE_MS = 10000;
+
+    async function isOllamaReachable(ollamaBaseUrl) {
+        const now = Date.now();
+        if (ollamaPingCache.baseUrl === ollamaBaseUrl && now - ollamaPingCache.checkedAt < OLLAMA_PING_CACHE_MS) {
+            return ollamaPingCache.reachable;
+        }
+        let reachable = false;
+        try {
+            const response = await fetchWithTimeout(`${ollamaBaseUrl}/api/tags`, { method: 'GET' }, OLLAMA_PING_TIMEOUT_MS);
+            reachable = response.ok;
+        } catch {
+            reachable = false;
+        }
+        ollamaPingCache = { baseUrl: ollamaBaseUrl, reachable, checkedAt: now };
+        return reachable;
+    }
+
+    // Check if the active AI provider is available (uses fast check to avoid Keychain popup)
     ipcMain.handle('check-claude-available', async () => {
+        const aiSettings = getAiProviderSettings();
+
+        if (aiSettings.provider === 'ollama') {
+            const ollamaReachable = await isOllamaReachable(aiSettings.ollamaBaseUrl);
+            return {
+                available: ollamaReachable && !!aiSettings.ollamaModel,
+                provider: 'ollama',
+                ollamaReachable,
+                ollamaModel: aiSettings.ollamaModel
+            };
+        }
+
         // Use fast file-existence check instead of decrypting (no Keychain access)
         const hasSecureKey = hasSecureKeyFile();
         const hasEnvKey = !!process.env.ANTHROPIC_API_KEY;
@@ -713,6 +891,7 @@ function setupIpcHandlers() {
         // Otherwise, report potential availability based on key existence
         return {
             available: claudeClientInitialized ? (claudeClient !== null) : (hasSecureKey || hasEnvKey),
+            provider: 'anthropic',
             hasApiKey: hasSecureKey || hasEnvKey,
             keySource: hasSecureKey ? 'secure' : (hasEnvKey ? 'environment' : 'none'),
             isEncrypted: hasSecureKey
@@ -723,13 +902,81 @@ function setupIpcHandlers() {
     ipcMain.handle('get-settings', async () => {
         // Use fast file-existence check instead of decrypting (no Keychain access)
         const hasSecureKey = hasSecureKeyFile();
+        const aiSettings = getAiProviderSettings();
         return {
             hasApiKey: hasSecureKey,
             // Don't show preview by default to avoid Keychain access
             // The key preview will be shown after user explicitly tests/saves a key
             apiKeyPreview: hasSecureKey ? '••••••••••••••••' : null,
-            isEncrypted: hasSecureKey
+            isEncrypted: hasSecureKey,
+            provider: aiSettings.provider,
+            ollamaBaseUrl: aiSettings.ollamaBaseUrl,
+            ollamaModel: aiSettings.ollamaModel
         };
+    });
+
+    // Save AI provider settings (non-sensitive, stored in settings.json)
+    ipcMain.handle('save-ai-settings', async (event, aiSettings) => {
+        try {
+            if (!aiSettings || typeof aiSettings !== 'object') {
+                throw new Error('Invalid settings');
+            }
+            const settings = loadSettings();
+
+            if (aiSettings.provider !== undefined) {
+                if (aiSettings.provider !== 'anthropic' && aiSettings.provider !== 'ollama') {
+                    throw new Error('Invalid provider');
+                }
+                settings.aiProvider = aiSettings.provider;
+            }
+            if (aiSettings.ollamaBaseUrl !== undefined) {
+                settings.ollamaBaseUrl = validateOllamaBaseUrl(aiSettings.ollamaBaseUrl);
+            }
+            if (aiSettings.ollamaModel !== undefined) {
+                if (typeof aiSettings.ollamaModel !== 'string' || aiSettings.ollamaModel.length > 200) {
+                    throw new Error('Invalid model name');
+                }
+                settings.ollamaModel = aiSettings.ollamaModel.trim();
+            }
+
+            if (!saveSettings(settings)) {
+                throw new Error('Failed to save settings');
+            }
+            // Provider/URL may have changed — drop the cached ping result
+            ollamaPingCache = { baseUrl: null, reachable: false, checkedAt: 0 };
+            return { success: true };
+        } catch (error) {
+            safeLog.error('[IPC] Error saving AI settings:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    // List models installed in a local Ollama instance
+    ipcMain.handle('list-ollama-models', async (event, baseUrl) => {
+        try {
+            const validUrl = validateOllamaBaseUrl(baseUrl);
+            const models = await fetchOllamaModels(validUrl);
+            return { success: true, models };
+        } catch (error) {
+            safeLog.error('[IPC] Error listing Ollama models:', error);
+            const friendly = friendlyOllamaError(error, baseUrl, '');
+            return { success: false, error: friendly.message };
+        }
+    });
+
+    // Test connection to a local Ollama instance (mirrors test-api-key's result shape)
+    ipcMain.handle('test-ollama-connection', async (event, params) => {
+        const { baseUrl, model } = params || {};
+        try {
+            const validUrl = validateOllamaBaseUrl(baseUrl);
+            const models = await fetchOllamaModels(validUrl);
+            const modelFound = !!model && models.includes(model);
+            return { valid: true, models, modelFound };
+        } catch (error) {
+            safeLog.error('[IPC] Error testing Ollama connection:', error);
+            const friendly = friendlyOllamaError(error, baseUrl, model || '');
+            return { valid: false, error: friendly.message };
+        }
     });
 
     // Save API key (uses secure storage - triggers Keychain access intentionally)

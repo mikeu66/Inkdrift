@@ -272,8 +272,65 @@
             </div>
 
             <div class="settings-content">
+                <!-- AI Provider Section -->
+                <div class="settings-section" id="aiProviderSection">
+                    <div class="settings-section-header">
+                        <h3>AI Provider</h3>
+                    </div>
+                    <p class="settings-description">
+                        Choose which AI backend powers brainstorming, plan generation, and action items.
+                    </p>
+                    <div class="provider-radio-group">
+                        <label class="provider-radio-option">
+                            <input type="radio" name="aiProvider" id="providerAnthropic" value="anthropic" />
+                            <span>Anthropic Claude (cloud, API key)</span>
+                        </label>
+                        <label class="provider-radio-option">
+                            <input type="radio" name="aiProvider" id="providerOllama" value="ollama" />
+                            <span>Ollama (local, free)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Ollama Section -->
+                <div class="settings-section" id="ollamaSection" style="display: none;">
+                    <div class="settings-section-header">
+                        <h3>Ollama Settings</h3>
+                        <span id="ollamaStatus" class="api-key-status"></span>
+                    </div>
+                    <p class="settings-description">
+                        Runs models locally on your machine — no API key needed. Install from
+                        <a href="#" id="ollamaLink" class="settings-link">ollama.com</a>, then pull a model
+                        (e.g. <code>ollama pull llama3.2</code>).
+                    </p>
+
+                    <div class="api-key-input-section">
+                        <label class="ollama-field-label" for="ollamaUrlInput">Server URL</label>
+                        <input
+                            type="text"
+                            id="ollamaUrlInput"
+                            class="api-key-input"
+                            placeholder="http://localhost:11434"
+                            autocomplete="off"
+                        />
+                        <label class="ollama-field-label" for="ollamaModelSelect">Model</label>
+                        <div class="api-key-input-container">
+                            <select id="ollamaModelSelect" class="api-key-input">
+                                <option value="">Select a model...</option>
+                            </select>
+                            <button id="refreshOllamaModelsBtn" class="test-api-key-btn" title="Reload installed models">Refresh</button>
+                        </div>
+                        <div class="api-key-buttons">
+                            <button id="testOllamaBtn" class="test-api-key-btn">Test Connection</button>
+                            <button id="saveOllamaBtn" class="save-api-key-btn">Save</button>
+                        </div>
+                    </div>
+
+                    <div id="ollamaMessage" class="api-key-message" style="display: none;"></div>
+                </div>
+
                 <!-- API Key Section -->
-                <div class="settings-section">
+                <div class="settings-section" id="anthropicSection">
                     <div class="settings-section-header">
                         <h3>Claude API Key</h3>
                         <span id="apiKeyStatus" class="api-key-status"></span>

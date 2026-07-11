@@ -83,5 +83,27 @@ contextBridge.exposeInMainWorld('electronAPI', {
             throw new Error('API key must be a non-empty string');
         }
         return ipcRenderer.invoke('test-api-key', apiKey);
+    },
+
+    // AI provider settings (Anthropic vs local Ollama)
+    saveAiSettings: (aiSettings) => {
+        if (!aiSettings || typeof aiSettings !== 'object') {
+            throw new Error('AI settings must be an object');
+        }
+        return ipcRenderer.invoke('save-ai-settings', aiSettings);
+    },
+
+    listOllamaModels: (baseUrl) => {
+        if (!baseUrl || typeof baseUrl !== 'string') {
+            throw new Error('Base URL must be a non-empty string');
+        }
+        return ipcRenderer.invoke('list-ollama-models', baseUrl);
+    },
+
+    testOllamaConnection: (params) => {
+        if (!params || typeof params !== 'object') {
+            throw new Error('Invalid params: must be an object');
+        }
+        return ipcRenderer.invoke('test-ollama-connection', params);
     }
 });

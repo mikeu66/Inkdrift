@@ -757,6 +757,45 @@ For each action item provide:
 Return ONLY a valid JSON array with no other text:
 [{"text": "Description here", "hoursNeeded": 4}, ...]`;
 
+// Parse an AI response that should be a JSON array.
+// Handles markdown code fences and local models that wrap the array in an object.
+function parseJsonArrayResponse(text) {
+    let jsonText = text.trim();
+    if (jsonText.startsWith('```')) {
+        jsonText = jsonText.replace(/```json?\n?/g, '').replace(/```$/g, '').trim();
+    }
+
+    let parsed;
+    try {
+        parsed = JSON.parse(jsonText);
+    } catch {
+        // Fall back to the outermost array in the text
+        const start = jsonText.indexOf('[');
+        const end = jsonText.lastIndexOf(']');
+        if (start === -1 || end <= start) {
+            throw new Error('AI response was not valid JSON');
+        }
+        parsed = JSON.parse(jsonText.slice(start, end + 1));
+    }
+
+    let items = null;
+    if (Array.isArray(parsed)) {
+        items = parsed;
+    } else if (parsed && typeof parsed === 'object') {
+        items = Object.values(parsed).find(v => Array.isArray(v)) || null;
+    }
+    if (!items) {
+        throw new Error('AI response did not contain a JSON array');
+    }
+
+    // Drop items without usable text so one bad entry can't break saving
+    items = items.filter(item => item && typeof item.text === 'string' && item.text.trim().length > 0);
+    if (items.length === 0) {
+        throw new Error('AI response contained no usable items');
+    }
+    return items;
+}
+
 async function generateActionItems() {
     const todo = findTodoById(appState.currentTodoId);
     if (!todo || !todo.brainstormResult) {
@@ -771,7 +810,7 @@ async function generateActionItems() {
     try {
         const claudeStatus = await window.electronAPI.checkClaudeAvailable();
         if (!claudeStatus.available) {
-            throw new Error('Claude API not available. Please set ANTHROPIC_API_KEY environment variable.');
+            throw new Error('AI provider not available. Check your configuration in Settings.');
         }
 
         const response = await window.electronAPI.callClaude({
@@ -779,7 +818,8 @@ async function generateActionItems() {
             messages: [{ role: 'user', content: todo.brainstormResult }],
             options: {
                 model: 'claude-3-haiku-20240307',
-                max_tokens: 2048
+                max_tokens: 2048,
+                responseFormat: 'json'
             }
         });
 
@@ -787,13 +827,7 @@ async function generateActionItems() {
             throw new Error(response.error || 'Failed to generate action items');
         }
 
-        // Parse JSON response - handle potential markdown code blocks
-        let jsonText = response.text.trim();
-        if (jsonText.startsWith('```')) {
-            jsonText = jsonText.replace(/```json?\n?/g, '').replace(/```$/g, '').trim();
-        }
-
-        const items = JSON.parse(jsonText);
+        const items = parseJsonArrayResponse(response.text);
         todo.actionItems = items.map((item, index) => ({
             id: generateUUID(),
             text: item.text,
@@ -1557,7 +1591,7 @@ async function processBrainstormMessage() {
     try {
         const claudeStatus = await window.electronAPI.checkClaudeAvailable();
         if (!claudeStatus.available) {
-            throw new Error('Claude API not available. Please set ANTHROPIC_API_KEY environment variable.');
+            throw new Error('AI provider not available. Check your configuration in Settings.');
         }
 
         const response = await window.electronAPI.callClaude({
@@ -1596,7 +1630,7 @@ async function generateBrainstormPlan() {
     try {
         const claudeStatus = await window.electronAPI.checkClaudeAvailable();
         if (!claudeStatus.available) {
-            throw new Error('Claude API not available.');
+            throw new Error('AI provider not available. Check your configuration in Settings.');
         }
 
         // Format conversation for the plan generator
@@ -1723,10 +1757,38 @@ async function renderSettingsView() {
     const settings = await window.electronAPI.getSettings();
     const claudeStatus = await window.electronAPI.checkClaudeAvailable();
 
-    // Update status badge
+    // Provider selection
+    const provider = settings.provider || 'anthropic';
+    document.getElementById('providerAnthropic').checked = provider === 'anthropic';
+    document.getElementById('providerOllama').checked = provider === 'ollama';
+    updateProviderVisibility(provider);
+
+    // Ollama section
+    document.getElementById('ollamaUrlInput').value = settings.ollamaBaseUrl || 'http://localhost:11434';
+    const ollamaStatusEl = document.getElementById('ollamaStatus');
+    if (provider === 'ollama') {
+        if (claudeStatus.available) {
+            ollamaStatusEl.textContent = 'Connected';
+            ollamaStatusEl.className = 'api-key-status connected';
+        } else if (claudeStatus.ollamaReachable) {
+            ollamaStatusEl.textContent = 'No model selected';
+            ollamaStatusEl.className = 'api-key-status not-configured';
+        } else {
+            ollamaStatusEl.textContent = 'Not running';
+            ollamaStatusEl.className = 'api-key-status not-configured';
+        }
+        hideOllamaMessage();
+        // Populate model dropdown without blocking the render
+        refreshOllamaModels(settings.ollamaModel);
+    }
+
+    // Update status badge (Anthropic reports availability only when active)
     const statusEl = document.getElementById('apiKeyStatus');
-    if (claudeStatus.available) {
+    if (provider === 'anthropic' && claudeStatus.available) {
         statusEl.textContent = 'Connected';
+        statusEl.className = 'api-key-status connected';
+    } else if (settings.hasApiKey) {
+        statusEl.textContent = 'Key saved';
         statusEl.className = 'api-key-status connected';
     } else {
         statusEl.textContent = 'Not configured';
@@ -1882,6 +1944,156 @@ function openAnthropicConsole(e) {
     window.open('https://console.anthropic.com/', '_blank');
 }
 
+function openOllamaSite(e) {
+    e.preventDefault();
+    window.open('https://ollama.com/', '_blank');
+}
+
+// ===================================
+// OLLAMA SETTINGS
+// ===================================
+function updateProviderVisibility(provider) {
+    document.getElementById('anthropicSection').style.display = provider === 'anthropic' ? '' : 'none';
+    document.getElementById('ollamaSection').style.display = provider === 'ollama' ? '' : 'none';
+}
+
+async function handleProviderChange(e) {
+    const provider = e.target.value;
+    updateProviderVisibility(provider);
+
+    try {
+        const result = await window.electronAPI.saveAiSettings({ provider });
+        if (!result.success) {
+            throw new Error(result.error || 'Failed to save provider');
+        }
+        // Refresh availability state and status badges
+        await checkClaudeAvailability();
+        renderSettingsView();
+    } catch (error) {
+        showToast(`Failed to switch provider: ${error.message}`, 'error');
+    }
+}
+
+function showOllamaMessage(message, type) {
+    const msgEl = document.getElementById('ollamaMessage');
+    msgEl.textContent = message;
+    msgEl.className = `api-key-message ${type}`;
+    msgEl.style.display = 'flex';
+}
+
+function hideOllamaMessage() {
+    const msgEl = document.getElementById('ollamaMessage');
+    msgEl.style.display = 'none';
+}
+
+async function refreshOllamaModels(selectedModel) {
+    const select = document.getElementById('ollamaModelSelect');
+    const url = document.getElementById('ollamaUrlInput').value.trim();
+    // Preserve the current choice when no explicit model is passed
+    const modelToSelect = selectedModel !== undefined ? selectedModel : select.value;
+
+    if (!url) {
+        showOllamaMessage('Enter the Ollama server URL first', 'error');
+        return;
+    }
+
+    try {
+        const result = await window.electronAPI.listOllamaModels(url);
+        if (!result.success) {
+            throw new Error(result.error || 'Failed to list models');
+        }
+
+        select.innerHTML = '<option value="">Select a model...</option>';
+        for (const name of result.models) {
+            const option = document.createElement('option');
+            option.value = name;
+            option.textContent = name;
+            select.appendChild(option);
+        }
+        if (modelToSelect && result.models.includes(modelToSelect)) {
+            select.value = modelToSelect;
+        }
+
+        if (result.models.length === 0) {
+            showOllamaMessage('No models installed. Run: ollama pull llama3.2', 'error');
+        }
+    } catch (error) {
+        showOllamaMessage(error.message, 'error');
+    }
+}
+
+async function testOllamaConnection() {
+    const url = document.getElementById('ollamaUrlInput').value.trim();
+    const model = document.getElementById('ollamaModelSelect').value;
+
+    const testBtn = document.getElementById('testOllamaBtn');
+    const saveBtn = document.getElementById('saveOllamaBtn');
+    testBtn.disabled = true;
+    saveBtn.disabled = true;
+    showOllamaMessage('Testing connection...', 'loading');
+
+    try {
+        const result = await window.electronAPI.testOllamaConnection({ baseUrl: url, model });
+        if (result.valid) {
+            if (model && !result.modelFound) {
+                showOllamaMessage(`Connected, but model "${model}" is not installed`, 'error');
+            } else if (model) {
+                showOllamaMessage(`Connected! Model "${model}" is ready.`, 'success');
+            } else {
+                showOllamaMessage(`Connected! ${result.models.length} model(s) available. Select one and save.`, 'success');
+            }
+        } else {
+            showOllamaMessage(result.error || 'Connection failed', 'error');
+        }
+    } catch (error) {
+        showOllamaMessage(`Test failed: ${error.message}`, 'error');
+    } finally {
+        testBtn.disabled = false;
+        saveBtn.disabled = false;
+    }
+}
+
+async function saveOllamaSettings() {
+    const url = document.getElementById('ollamaUrlInput').value.trim();
+    const model = document.getElementById('ollamaModelSelect').value;
+
+    if (!url) {
+        showOllamaMessage('Please enter the Ollama server URL', 'error');
+        return;
+    }
+    if (!model) {
+        showOllamaMessage('Please select a model (use Refresh to load the list)', 'error');
+        return;
+    }
+
+    const testBtn = document.getElementById('testOllamaBtn');
+    const saveBtn = document.getElementById('saveOllamaBtn');
+    testBtn.disabled = true;
+    saveBtn.disabled = true;
+    showOllamaMessage('Saving...', 'loading');
+
+    try {
+        const result = await window.electronAPI.saveAiSettings({
+            provider: 'ollama',
+            ollamaBaseUrl: url,
+            ollamaModel: model
+        });
+        if (result.success) {
+            showOllamaMessage('Ollama settings saved!', 'success');
+            // Update availability state and re-render to update status
+            await checkClaudeAvailability();
+            setTimeout(() => renderSettingsView(), 1000);
+        } else {
+            showOllamaMessage(`Failed to save: ${result.error}`, 'error');
+        }
+    } catch (error) {
+        showOllamaMessage(`Save failed: ${error.message}`, 'error');
+    } finally {
+        testBtn.disabled = false;
+        saveBtn.disabled = false;
+    }
+}
+
 // ===================================
 // EVENT LISTENERS
 // ===================================
@@ -2010,6 +2222,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('removeApiKeyBtn').addEventListener('click', removeApiKey);
     document.getElementById('anthropicLink').addEventListener('click', openAnthropicConsole);
 
+    // AI provider selection + Ollama settings
+    document.getElementById('providerAnthropic').addEventListener('change', handleProviderChange);
+    document.getElementById('providerOllama').addEventListener('change', handleProviderChange);
+    document.getElementById('refreshOllamaModelsBtn').addEventListener('click', () => refreshOllamaModels());
+    document.getElementById('testOllamaBtn').addEventListener('click', testOllamaConnection);
+    document.getElementById('saveOllamaBtn').addEventListener('click', saveOllamaSettings);
+    document.getElementById('ollamaUrlInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') refreshOllamaModels();
+    });
+    document.getElementById('ollamaLink').addEventListener('click', openOllamaSite);
+
     // Manual action item add (inside AI action items section)
     document.getElementById('addManualActionItemBtn').addEventListener('click', addManualToActionItems);
     document.getElementById('manualActionItemInput').addEventListener('keypress', (e) => {
@@ -2078,7 +2301,7 @@ async function granulateActionItem(id, btn) {
     try {
         const claudeStatus = await window.electronAPI.checkClaudeAvailable();
         if (!claudeStatus.available) {
-            throw new Error('Claude API not available');
+            throw new Error('AI provider not available. Check your configuration in Settings.');
         }
 
         const prompt = `Break this action item into 3-5 specific, actionable sub-tasks.
@@ -2095,7 +2318,8 @@ Return ONLY a valid JSON array with no other text:
             messages: [{ role: 'user', content: prompt }],
             options: {
                 model: 'claude-3-haiku-20240307',
-                max_tokens: 1024
+                max_tokens: 1024,
+                responseFormat: 'json'
             }
         });
 
@@ -2103,13 +2327,7 @@ Return ONLY a valid JSON array with no other text:
             throw new Error(response.error || 'Failed to generate sub-tasks');
         }
 
-        // Parse JSON response - handle potential markdown code blocks
-        let jsonText = response.text.trim();
-        if (jsonText.startsWith('```')) {
-            jsonText = jsonText.replace(/```json?\n?/g, '').replace(/```$/g, '').trim();
-        }
-
-        const subTasks = JSON.parse(jsonText);
+        const subTasks = parseJsonArrayResponse(response.text);
         item.children = subTasks.map(st => ({
             id: generateUUID(),
             text: st.text,
