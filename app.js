@@ -817,7 +817,7 @@ async function generateActionItems() {
             systemPrompt: ACTION_ITEMS_PROMPT,
             messages: [{ role: 'user', content: todo.brainstormResult }],
             options: {
-                model: 'claude-3-haiku-20240307',
+                model: 'claude-haiku-4-5',
                 max_tokens: 2048,
                 responseFormat: 'json'
             }
@@ -1598,7 +1598,7 @@ async function processBrainstormMessage() {
             systemPrompt: BRAINSTORM_PROMPT,
             messages: bs.conversation,
             options: {
-                model: 'claude-3-haiku-20240307',
+                model: 'claude-haiku-4-5',
                 max_tokens: 2048,
                 temperature: 0.5
             }
@@ -1653,7 +1653,7 @@ Keep it practical and actionable. This will be used by a developer (possibly wit
             systemPrompt,
             messages: [{ role: 'user', content: conversationText }],
             options: {
-                model: 'claude-3-haiku-20240307',
+                model: 'claude-haiku-4-5',
                 max_tokens: 4096,
                 temperature: 0.7
             }
@@ -2317,7 +2317,7 @@ Return ONLY a valid JSON array with no other text:
             systemPrompt: 'You are a project planning assistant. Break action items into concrete sub-tasks. Return only valid JSON.',
             messages: [{ role: 'user', content: prompt }],
             options: {
-                model: 'claude-3-haiku-20240307',
+                model: 'claude-haiku-4-5',
                 max_tokens: 1024,
                 responseFormat: 'json'
             }

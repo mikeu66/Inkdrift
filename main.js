@@ -815,7 +815,7 @@ function setupIpcHandlers() {
             rateLimiter.recordCall();
 
             const response = await claudeClient.messages.create({
-                model: options.model || 'claude-3-haiku-20240307',
+                model: options.model || 'claude-haiku-4-5',
                 max_tokens: options.max_tokens || 2048,
                 temperature: options.temperature || 1.0,
                 system: systemPrompt,
@@ -1043,7 +1043,7 @@ function setupIpcHandlers() {
 
             // Make a minimal API call to verify the key works
             const response = await testClient.messages.create({
-                model: 'claude-3-haiku-20240307',
+                model: 'claude-haiku-4-5',
                 max_tokens: 10,
                 messages: [{ role: 'user', content: 'Hi' }]
             });
