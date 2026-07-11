@@ -1149,7 +1149,7 @@ function promoteActionItem(id) {
 
     // Create new main task
     const newTodo = {
-        id: generateId(),
+        id: generateUUID(),
         text: item.text,
         completed: false,
         notes: '',
