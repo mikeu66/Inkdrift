@@ -1,0 +1,188 @@
+[
+  {
+    "provider": "claude/claude-haiku-4-5",
+    "task": "brainstorm-chat",
+    "run": 1,
+    "latencyMs": 1307,
+    "tokensIn": 406,
+    "tokensOut": 46,
+    "genSeconds": null,
+    "pass": true,
+    "detail": {
+      "questions": 1,
+      "words": 35
+    },
+    "sample": "That makes sense for keeping it simple. When you're adding recipes in batches on weekends, are you typing them in manually, or would you want to paste them from other sources like websites or PDFs?"
+  },
+  {
+    "provider": "claude/claude-haiku-4-5",
+    "task": "brainstorm-chat",
+    "run": 2,
+    "latencyMs": 1196,
+    "tokensIn": 406,
+    "tokensOut": 45,
+    "genSeconds": null,
+    "pass": true,
+    "detail": {
+      "questions": 1,
+      "words": 35
+    },
+    "sample": "That makes sense for keeping it simple. When you're adding recipes in batches on weekends, are you typing them in manually, or would you want to paste them from other sources like websites or photos?"
+  },
+  {
+    "provider": "claude/claude-haiku-4-5",
+    "task": "brainstorm-chat",
+    "run": 3,
+    "latencyMs": 1072,
+    "tokensIn": 406,
+    "tokensOut": 48,
+    "genSeconds": null,
+    "pass": true,
+    "detail": {
+      "questions": 1,
+      "words": 38
+    },
+    "sample": "Nice, that's a clean approach. For sharing without accounts, are you thinking you'd both just bookmark the same link, or would you want one person to manage the recipes and the other person only able to view them?"
+  },
+  {
+    "provider": "claude/claude-haiku-4-5",
+    "task": "plan-generation",
+    "run": 1,
+    "latencyMs": 7272,
+    "tokensIn": 292,
+    "tokensOut": 571,
+    "genSeconds": null,
+    "pass": true,
+    "detail": {
+      "hasStructure": true,
+      "keywordHits": "5/6",
+      "words": 370
+    },
+    "sample": "# Family Recipe Box - Project Plan\n\n## Project Summary\nA mobile-friendly web app for saving, organizing, and browsing family recipes. Designed primarily for use while cooking, with a focus on readability and quick reference. Two users (siblings) share recipes via a single shared link with no authentication required.\n\n## Core Features\n\n### Cooking View (Primary Use Case)\n- Large, readable step-by-s"
+  },
+  {
+    "provider": "claude/claude-haiku-4-5",
+    "task": "plan-generation",
+    "run": 2,
+    "latencyMs": 6943,
+    "tokensIn": 292,
+    "tokensOut": 536,
+    "genSeconds": null,
+    "pass": true,
+    "detail": {
+      "hasStructure": true,
+      "keywordHits": "4/6",
+      "words": 357
+    },
+    "sample": "# Family Recipe Box - Project Plan\n\n## Summary\nA shared web app for storing and organizing family recipes with a focus on mobile usability during cooking. Two users (siblings) will access the same recipe collection via a shared link, with no authentication required.\n\n## Core Features\n\n### Cooking View (Priority 1)\n- Large, readable step-by-step instructions\n- Ingredients pinned/sticky at the top o"
+  },
+  {
+    "provider": "claude/claude-haiku-4-5",
+    "task": "plan-generation",
+    "run": 3,
+    "latencyMs": 7310,
+    "tokensIn": 292,
+    "tokensOut": 589,
+    "genSeconds": null,
+    "pass": true,
+    "detail": {
+      "hasStructure": true,
+      "keywordHits": "5/6",
+      "words": 385
+    },
+    "sample": "# Family Recipe Box - Project Plan\n\n## Summary\nA simple, shared web app for storing and organizing family recipes with a focus on kitchen usability. Two users (siblings) will access the same recipe collection via a shared link. The app prioritizes the cooking experience with large, readable recipe steps and quick ingredient reference.\n\n## Core Features\n\n### Recipe Browsing & Cooking View\n- **Large"
+  },
+  {
+    "provider": "claude/claude-haiku-4-5",
+    "task": "action-items",
+    "run": 1,
+    "latencyMs": 3172,
+    "tokensIn": 319,
+    "tokensOut": 372,
+    "genSeconds": null,
+    "pass": true,
+    "detail": {
+      "count": 10,
+      "withHours": 10,
+      "strictJson": false
+    },
+    "sample": "```json\n[\n  {\n    \"text\": \"Set up project repository, development environment, and choose tech stack (e.g., React, Node.js, database)\",\n    \"hoursNeeded\": 3\n  },\n  {\n    \"text\": \"Design and build recipe entry form with fields for title, ingredients list, and cooking steps\",\n    \"hoursNeeded\": 5\n  },\n  {\n    \"text\": \"Create backend API endpoints for saving and retrieving recipes\",\n    \"hoursNeeded\""
+  },
+  {
+    "provider": "claude/claude-haiku-4-5",
+    "task": "action-items",
+    "run": 2,
+    "latencyMs": 3651,
+    "tokensIn": 319,
+    "tokensOut": 397,
+    "genSeconds": null,
+    "pass": true,
+    "detail": {
+      "count": 10,
+      "withHours": 10,
+      "strictJson": false
+    },
+    "sample": "```json\n[\n  {\n    \"text\": \"Set up project repository, development environment, and basic folder structure (frontend, backend if needed, assets)\",\n    \"hoursNeeded\": 2\n  },\n  {\n    \"text\": \"Design and build recipe entry form (title, ingredients list, steps) with client-side validation and storage\",\n    \"hoursNeeded\": 6\n  },\n  {\n    \"text\": \"Create recipe list view with ability to display all saved "
+  },
+  {
+    "provider": "claude/claude-haiku-4-5",
+    "task": "action-items",
+    "run": 3,
+    "latencyMs": 4139,
+    "tokensIn": 319,
+    "tokensOut": 435,
+    "genSeconds": null,
+    "pass": true,
+    "detail": {
+      "count": 10,
+      "withHours": 10,
+      "strictJson": false
+    },
+    "sample": "```json\n[\n  {\n    \"text\": \"Set up project repository, hosting environment, and basic project structure (HTML, CSS, JavaScript folders)\",\n    \"hoursNeeded\": 2\n  },\n  {\n    \"text\": \"Build recipe entry form with fields for title, ingredients list, and cooking steps; store data in browser local storage\",\n    \"hoursNeeded\": 6\n  },\n  {\n    \"text\": \"Create recipe list view that displays all saved recipes"
+  },
+  {
+    "provider": "claude/claude-haiku-4-5",
+    "task": "granulate-subtasks",
+    "run": 1,
+    "latencyMs": 2471,
+    "tokensIn": 321,
+    "tokensOut": 209,
+    "genSeconds": null,
+    "pass": true,
+    "detail": {
+      "count": 5,
+      "strictJson": false
+    },
+    "sample": "```json\n[\n  {\n    \"text\": \"Create the HTML form structure with input fields for recipe title, ingredient list (with add/remove buttons), and steps list (with add/remove buttons)\"\n  },\n  {\n    \"text\": \"Style the form for mobile responsiveness, ensuring touch-friendly input fields and buttons that work well on phone screens\"\n  },\n  {\n    \"text\": \"Implement JavaScript logic to dynamically add and rem"
+  },
+  {
+    "provider": "claude/claude-haiku-4-5",
+    "task": "granulate-subtasks",
+    "run": 2,
+    "latencyMs": 2479,
+    "tokensIn": 321,
+    "tokensOut": 201,
+    "genSeconds": null,
+    "pass": true,
+    "detail": {
+      "count": 5,
+      "strictJson": false
+    },
+    "sample": "```json\n[\n  {\n    \"text\": \"Create HTML form structure with input fields for recipe title, dynamic ingredients list (add/remove rows), and multi-line text area for cooking steps\"\n  },\n  {\n    \"text\": \"Style form for mobile-first responsive design with large touch-friendly inputs and buttons suitable for kitchen use\"\n  },\n  {\n    \"text\": \"Implement JavaScript functionality to add/remove ingredient r"
+  },
+  {
+    "provider": "claude/claude-haiku-4-5",
+    "task": "granulate-subtasks",
+    "run": 3,
+    "latencyMs": 2208,
+    "tokensIn": 321,
+    "tokensOut": 198,
+    "genSeconds": null,
+    "pass": true,
+    "detail": {
+      "count": 5,
+      "strictJson": false
+    },
+    "sample": "```json\n[\n  {\n    \"text\": \"Create HTML form structure with input fields for recipe title (text), ingredients (textarea or dynamic list), and steps (textarea or dynamic list)\"\n  },\n  {\n    \"text\": \"Style form for mobile-first responsiveness with large touch targets and readable font sizes suitable for kitchen use\"\n  },\n  {\n    \"text\": \"Implement form validation to ensure title, at least one ingredi"
+  }
+]

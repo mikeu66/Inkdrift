@@ -1,0 +1,6 @@
+{
+  "name": "inkdrift",
+  "version": "1.0.0",
+  "description": "Benchmark harness — must keep the app name 'inkdrift' so safeStorage can decrypt the stored API key",
+  "main": "bench.js"
+}

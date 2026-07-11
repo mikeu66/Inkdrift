@@ -1,0 +1,284 @@
+[
+  {
+    "provider": "ollama/llama3.2:3b",
+    "task": "brainstorm-chat",
+    "run": 1,
+    "latencyMs": 5419,
+    "tokensIn": 409,
+    "tokensOut": 29,
+    "genSeconds": 1.135503,
+    "pass": true,
+    "detail": {
+      "questions": 1,
+      "words": 25
+    },
+    "sample": "So it's more of a collaborative tool than a personal one. How do you envision handling recipe variations or substitutions that might affect cooking results?"
+  },
+  {
+    "provider": "ollama/llama3.2:3b",
+    "task": "brainstorm-chat",
+    "run": 2,
+    "latencyMs": 2188,
+    "tokensIn": 409,
+    "tokensOut": 50,
+    "genSeconds": 1.946535,
+    "pass": true,
+    "detail": {
+      "questions": 1,
+      "words": 36
+    },
+    "sample": "So you're aiming for a clean and easy-to-use interface. Would having some basic notes or comments associated with each recipe (e.g., \"add 1/4 cup of this\") be something that would make the browsing experience even better?"
+  },
+  {
+    "provider": "ollama/llama3.2:3b",
+    "task": "brainstorm-chat",
+    "run": 3,
+    "latencyMs": 1746,
+    "tokensIn": 409,
+    "tokensOut": 39,
+    "genSeconds": 1.514229,
+    "pass": true,
+    "detail": {
+      "questions": 1,
+      "words": 35
+    },
+    "sample": "So you're thinking of making it easy to scan and prep while cooking. How do you envision handling variations or substitutions for recipes – should there be a way to note them in the app?"
+  },
+  {
+    "provider": "ollama/llama3.2:3b",
+    "task": "plan-generation",
+    "run": 1,
+    "latencyMs": 16025,
+    "tokensIn": 289,
+    "tokensOut": 375,
+    "genSeconds": 14.878455,
+    "pass": true,
+    "detail": {
+      "hasStructure": true,
+      "keywordHits": "5/6",
+      "words": 282
+    },
+    "sample": "# Project Plan: Family Recipe Box\n=====================================\n\n## Summary\n------------\n\nThe Family Recipe Box project is a simple web application designed to save and organize family recipes for users to browse while cooking. The primary features will include:\n\n* A user-friendly interface for browsing saved recipes\n* Step-by-step instructions with pinned ingredients at the top\n* Search f"
+  },
+  {
+    "provider": "ollama/llama3.2:3b",
+    "task": "plan-generation",
+    "run": 2,
+    "latencyMs": 17871,
+    "tokensIn": 289,
+    "tokensOut": 435,
+    "genSeconds": 17.611799,
+    "pass": true,
+    "detail": {
+      "hasStructure": true,
+      "keywordHits": "4/6",
+      "words": 307
+    },
+    "sample": "**Project Plan: Family Recipe Box**\n=====================================\n\n**Summary**\n------------\n\nCreate a simple web application to store and organize family recipes. The app will allow users to browse and cook from saved recipes, with a focus on usability in the kitchen.\n\n**Key Decisions**\n-----------------\n\n*   **No accounts required**: A shared link will be provided for easy access, elimina"
+  },
+  {
+    "provider": "ollama/llama3.2:3b",
+    "task": "plan-generation",
+    "run": 3,
+    "latencyMs": 13278,
+    "tokensIn": 289,
+    "tokensOut": 325,
+    "genSeconds": 13.015267,
+    "pass": true,
+    "detail": {
+      "hasStructure": true,
+      "keywordHits": "4/6",
+      "words": 244
+    },
+    "sample": "Project Plan: Family Recipe Box\n=====================================\n\n**Summary**\n------------\n\nCreate a simple web application to save and organize family recipes for easy browsing while cooking.\n\n**Key Decisions**\n-----------------\n\n* Design the app as a simple web app with no account requirements.\n* Prioritize ease of use in the kitchen, allowing users to browse recipes quickly without needing"
+  },
+  {
+    "provider": "ollama/llama3.2:3b",
+    "task": "action-items",
+    "run": 1,
+    "latencyMs": 9949,
+    "tokensIn": 309,
+    "tokensOut": 216,
+    "genSeconds": 8.6812,
+    "pass": true,
+    "detail": {
+      "count": 10,
+      "withHours": 10,
+      "strictJson": true
+    },
+    "sample": "[{\"text\": \"Create a basic recipe entry form with title, ingredients, and steps\", \"hoursNeeded\": 8}, {\"text\": \"Design and implement a responsive cooking view layout\", \"hoursNeeded\": 12}, {\"text\": \"Develop the search functionality by ingredient and simple filters\", \"hoursNeeded\": 10}, {\"text\": \"Set up a shared link system for sister access\", \"hoursNeeded\": 6}, {\"text\": \"Implement a private browsing "
+  },
+  {
+    "provider": "ollama/llama3.2:3b",
+    "task": "action-items",
+    "run": 2,
+    "latencyMs": 8788,
+    "tokensIn": 309,
+    "tokensOut": 211,
+    "genSeconds": 8.547045,
+    "pass": true,
+    "detail": {
+      "count": 10,
+      "withHours": 10,
+      "strictJson": true
+    },
+    "sample": "[\n  {\"text\": \"Create recipe entry form with title, ingredients, and steps\", \"hoursNeeded\": 8},\n  {\"text\": \"Design and implement recipe list view\", \"hoursNeeded\": 10},\n  {\"text\": \"Develop cooking view with large step-by-step instructions and pinned ingredients\", \"hoursNeeded\": 12},\n  {\"text\": \"Implement search by ingredient functionality\", \"hoursNeeded\": 6},\n  {\"text\": \"Create shared link for siste"
+  },
+  {
+    "provider": "ollama/llama3.2:3b",
+    "task": "action-items",
+    "run": 3,
+    "latencyMs": 7068,
+    "tokensIn": 309,
+    "tokensOut": 169,
+    "genSeconds": 6.838286,
+    "pass": true,
+    "detail": {
+      "count": 7,
+      "withHours": 7,
+      "strictJson": true
+    },
+    "sample": "[{\"text\": \"Set up the project structure and create a new React Native app\", \"hoursNeeded\": 4}, {\"text\": \"Design the user interface for recipe entry form, cooking view, and recipe list\", \"hoursNeeded\": 8}, {\"text\": \"Develop the recipe entry form (title, ingredients, steps) and recipe list features\", \"hoursNeeded\": 12}, {\"text\": \"Implement search by ingredient functionality with simple filters\", \"ho"
+  },
+  {
+    "provider": "ollama/llama3.2:3b",
+    "task": "granulate-subtasks",
+    "run": 1,
+    "latencyMs": 3473,
+    "tokensIn": 313,
+    "tokensOut": 55,
+    "genSeconds": 2.200056,
+    "pass": true,
+    "detail": {
+      "count": 3,
+      "strictJson": true
+    },
+    "sample": "[\n  {\"text\": \"Design the user interface layout for the recipe entry form\"},\n  {\"text\": \"Create a functional title field on the recipe entry form\"},\n  {\"text\": \"Develop a text area for ingredients and a button to add/subtract ingredients\"}\n]"
+  },
+  {
+    "provider": "ollama/llama3.2:3b",
+    "task": "granulate-subtasks",
+    "run": 2,
+    "latencyMs": 2381,
+    "tokensIn": 313,
+    "tokensOut": 54,
+    "genSeconds": 2.149755,
+    "pass": true,
+    "detail": {
+      "count": 3,
+      "strictJson": true
+    },
+    "sample": "[\n  {\"text\": \"Design the mobile-friendly recipe entry form layout\"},\n  {\"text\": \"Implement title, ingredients, and steps fields in the recipe entry form\"},\n  {\"text\": \"Test the recipe entry form on various phone devices for compactness\"}\n]"
+  },
+  {
+    "provider": "ollama/llama3.2:3b",
+    "task": "granulate-subtasks",
+    "run": 3,
+    "latencyMs": 2878,
+    "tokensIn": 313,
+    "tokensOut": 67,
+    "genSeconds": 2.643438,
+    "pass": true,
+    "detail": {
+      "count": 3,
+      "strictJson": true
+    },
+    "sample": "[\n  {\"text\": \"Design and wireframe the recipe entry form with a user-friendly interface\"},\n  {\"text\": \"Develop the front-end for the recipe entry form, including HTML, CSS, and JavaScript\"},\n  {\"text\": \"Integrate a database to store recipes and ensure data is persisted across app restarts\"}\n]"
+  },
+  {
+    "provider": "claude/claude-3-haiku-20240307",
+    "task": "brainstorm-chat",
+    "run": 1,
+    "latencyMs": 359,
+    "pass": false,
+    "error": "404 {\"type\":\"error\",\"error\":{\"type\":\"not_found_error\",\"message\":\"model: claude-3-haiku-20240307\"},\"request_id\":\"req_011Ccw8XJWH47NcUZaGHKyUA\"}"
+  },
+  {
+    "provider": "claude/claude-3-haiku-20240307",
+    "task": "brainstorm-chat",
+    "run": 2,
+    "latencyMs": 142,
+    "pass": false,
+    "error": "404 {\"type\":\"error\",\"error\":{\"type\":\"not_found_error\",\"message\":\"model: claude-3-haiku-20240307\"},\"request_id\":\"req_011Ccw8XKMNs5H6e88cA9R4t\"}"
+  },
+  {
+    "provider": "claude/claude-3-haiku-20240307",
+    "task": "brainstorm-chat",
+    "run": 3,
+    "latencyMs": 467,
+    "pass": false,
+    "error": "404 {\"type\":\"error\",\"error\":{\"type\":\"not_found_error\",\"message\":\"model: claude-3-haiku-20240307\"},\"request_id\":\"req_011Ccw8XMNfgRft7P5rVVoUm\"}"
+  },
+  {
+    "provider": "claude/claude-3-haiku-20240307",
+    "task": "plan-generation",
+    "run": 1,
+    "latencyMs": 142,
+    "pass": false,
+    "error": "404 {\"type\":\"error\",\"error\":{\"type\":\"not_found_error\",\"message\":\"model: claude-3-haiku-20240307\"},\"request_id\":\"req_011Ccw8XN1NPFoab61zCzy4b\"}"
+  },
+  {
+    "provider": "claude/claude-3-haiku-20240307",
+    "task": "plan-generation",
+    "run": 2,
+    "latencyMs": 125,
+    "pass": false,
+    "error": "404 {\"type\":\"error\",\"error\":{\"type\":\"not_found_error\",\"message\":\"model: claude-3-haiku-20240307\"},\"request_id\":\"req_011Ccw8XNaqoAcCF2kPbnpEt\"}"
+  },
+  {
+    "provider": "claude/claude-3-haiku-20240307",
+    "task": "plan-generation",
+    "run": 3,
+    "latencyMs": 119,
+    "pass": false,
+    "error": "404 {\"type\":\"error\",\"error\":{\"type\":\"not_found_error\",\"message\":\"model: claude-3-haiku-20240307\"},\"request_id\":\"req_011Ccw8XP7LyheEXPu4r6cuU\"}"
+  },
+  {
+    "provider": "claude/claude-3-haiku-20240307",
+    "task": "action-items",
+    "run": 1,
+    "latencyMs": 166,
+    "pass": false,
+    "error": "404 {\"type\":\"error\",\"error\":{\"type\":\"not_found_error\",\"message\":\"model: claude-3-haiku-20240307\"},\"request_id\":\"req_011Ccw8XPdMFbjnXbxx9hrV9\"}"
+  },
+  {
+    "provider": "claude/claude-3-haiku-20240307",
+    "task": "action-items",
+    "run": 2,
+    "latencyMs": 121,
+    "pass": false,
+    "error": "404 {\"type\":\"error\",\"error\":{\"type\":\"not_found_error\",\"message\":\"model: claude-3-haiku-20240307\"},\"request_id\":\"req_011Ccw8XQMWP1CNRYdsDrX7V\"}"
+  },
+  {
+    "provider": "claude/claude-3-haiku-20240307",
+    "task": "action-items",
+    "run": 3,
+    "latencyMs": 175,
+    "pass": false,
+    "error": "404 {\"type\":\"error\",\"error\":{\"type\":\"not_found_error\",\"message\":\"model: claude-3-haiku-20240307\"},\"request_id\":\"req_011Ccw8XQrWvCPcqAVv8xXG3\"}"
+  },
+  {
+    "provider": "claude/claude-3-haiku-20240307",
+    "task": "granulate-subtasks",
+    "run": 1,
+    "latencyMs": 118,
+    "pass": false,
+    "error": "404 {\"type\":\"error\",\"error\":{\"type\":\"not_found_error\",\"message\":\"model: claude-3-haiku-20240307\"},\"request_id\":\"req_011Ccw8XRcQqFdAex2ULGNNW\"}"
+  },
+  {
+    "provider": "claude/claude-3-haiku-20240307",
+    "task": "granulate-subtasks",
+    "run": 2,
+    "latencyMs": 136,
+    "pass": false,
+    "error": "404 {\"type\":\"error\",\"error\":{\"type\":\"not_found_error\",\"message\":\"model: claude-3-haiku-20240307\"},\"request_id\":\"req_011Ccw8XS7fnBEy9ryuf6ai4\"}"
+  },
+  {
+    "provider": "claude/claude-3-haiku-20240307",
+    "task": "granulate-subtasks",
+    "run": 3,
+    "latencyMs": 113,
+    "pass": false,
+    "error": "404 {\"type\":\"error\",\"error\":{\"type\":\"not_found_error\",\"message\":\"model: claude-3-haiku-20240307\"},\"request_id\":\"req_011Ccw8XSgQ9p15bcg9Xm9XU\"}"
+  }
+]
