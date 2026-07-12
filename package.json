@@ -7,7 +7,8 @@
   "license": "ISC",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder"
+    "build": "electron-builder",
+    "test": "node --test test/"
   },
   "keywords": [
     "todo",
@@ -16,7 +17,8 @@
   ],
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
-    "dotenv": "^16.0.0"
+    "dotenv": "^16.0.0",
+    "marked": "^18.0.6"
   },
   "devDependencies": {
     "electron": "^39.2.7",
@@ -29,15 +31,25 @@
       "category": "public.app-category.productivity",
       "target": {
         "target": "dmg",
-        "arch": ["universal"]
+        "arch": [
+          "universal"
+        ]
       },
       "icon": "icon.icns"
     },
     "dmg": {
       "title": "InkDrift",
       "contents": [
-        { "x": 130, "y": 220 },
-        { "x": 410, "y": 220, "type": "link", "path": "/Applications" }
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
       ]
     }
   }

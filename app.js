@@ -25,7 +25,7 @@ let appState = {
     }
 };
 
-const STAGES = ['brainstorm', 'planning', 'development', 'refinement', 'testing', 'done'];
+// STAGES is provided by lib/stages.js (shared with main process validation and tests)
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
 // ===================================
@@ -179,6 +179,14 @@ function getNextOrder() {
     return Math.max(...appState.todos.map(t => t.order || 0)) + 1;
 }
 
+// Show raw text safely (textContent, never innerHTML) when markdown rendering is unavailable
+function renderPlainTextFallback(container, text) {
+    container.innerHTML = '';
+    const pre = document.createElement('pre');
+    pre.textContent = text;
+    container.appendChild(pre);
+}
+
 function formatTimeSince(timestamp) {
     const ms = Date.now() - new Date(timestamp).getTime();
     const days = Math.floor(ms / (1000 * 60 * 60 * 24));
@@ -314,7 +322,6 @@ function renderListView() {
 }
 
 function createTodoElement(todo) {
-    console.log('createTodoElement - todo:', todo, 'id:', todo.id);
     const li = document.createElement('li');
     li.className = `todo-item ${todo.completed ? 'completed' : ''} ${todo.inProgress ? 'in-progress-item' : ''}`;
     li.draggable = true;
@@ -326,7 +333,6 @@ function createTodoElement(todo) {
         if (e.target.type === 'checkbox' || e.target.classList.contains('delete-btn')) {
             return;
         }
-        console.log('Row clicked - todo.id:', todo.id);
         navigateToDetail(todo.id);
     });
 
@@ -356,8 +362,6 @@ function createTodoElement(todo) {
     text.className = 'todo-text';
     text.textContent = todo.text;
     text.addEventListener('click', () => {
-        console.log('Text clicked - todo object:', JSON.stringify(todo, null, 2));
-        console.log('Todo keys:', Object.keys(todo));
         navigateToDetail(todo.id);
     });
 
@@ -520,14 +524,12 @@ function cleanupDropZones() {
 // DETAIL VIEW
 // ===================================
 function navigateToDetail(id) {
-    console.log('navigateToDetail called with id:', id);
     appState.currentView = 'detail';
     appState.currentTodoId = id;
     render();
 }
 
 function renderDetailView() {
-    console.log('renderDetailView - currentTodoId:', appState.currentTodoId);
     const todo = findTodoById(appState.currentTodoId);
     if (!todo) {
         console.log('Todo not found, navigating to list');
@@ -583,7 +585,7 @@ function renderDetailView() {
         planningResultSection.style.display = 'block';
         actionItemsSection.style.display = 'block';
 
-        // Render markdown
+        // Render markdown; fall back to escaped plain text
         try {
             if (typeof marked !== 'undefined') {
                 marked.setOptions({
@@ -592,10 +594,10 @@ function renderDetailView() {
                 });
                 planningResultContent.innerHTML = marked.parse(todo.brainstormResult);
             } else {
-                planningResultContent.innerHTML = `<pre>${todo.brainstormResult}</pre>`;
+                renderPlainTextFallback(planningResultContent, todo.brainstormResult);
             }
         } catch (error) {
-            planningResultContent.innerHTML = `<pre>${todo.brainstormResult}</pre>`;
+            renderPlainTextFallback(planningResultContent, todo.brainstormResult);
         }
 
         // Render action items
@@ -757,44 +759,7 @@ For each action item provide:
 Return ONLY a valid JSON array with no other text:
 [{"text": "Description here", "hoursNeeded": 4}, ...]`;
 
-// Parse an AI response that should be a JSON array.
-// Handles markdown code fences and local models that wrap the array in an object.
-function parseJsonArrayResponse(text) {
-    let jsonText = text.trim();
-    if (jsonText.startsWith('```')) {
-        jsonText = jsonText.replace(/```json?\n?/g, '').replace(/```$/g, '').trim();
-    }
-
-    let parsed;
-    try {
-        parsed = JSON.parse(jsonText);
-    } catch {
-        // Fall back to the outermost array in the text
-        const start = jsonText.indexOf('[');
-        const end = jsonText.lastIndexOf(']');
-        if (start === -1 || end <= start) {
-            throw new Error('AI response was not valid JSON');
-        }
-        parsed = JSON.parse(jsonText.slice(start, end + 1));
-    }
-
-    let items = null;
-    if (Array.isArray(parsed)) {
-        items = parsed;
-    } else if (parsed && typeof parsed === 'object') {
-        items = Object.values(parsed).find(v => Array.isArray(v)) || null;
-    }
-    if (!items) {
-        throw new Error('AI response did not contain a JSON array');
-    }
-
-    // Drop items without usable text so one bad entry can't break saving
-    items = items.filter(item => item && typeof item.text === 'string' && item.text.trim().length > 0);
-    if (items.length === 0) {
-        throw new Error('AI response contained no usable items');
-    }
-    return items;
-}
+// parseJsonArrayResponse is provided by lib/parse-json-array.js (shared with unit tests)
 
 async function generateActionItems() {
     const todo = findTodoById(appState.currentTodoId);
@@ -1149,7 +1114,7 @@ function promoteActionItem(id) {
 
     // Create new main task
     const newTodo = {
-        id: generateId(),
+        id: generateUUID(),
         text: item.text,
         completed: false,
         notes: '',
@@ -1702,7 +1667,10 @@ function updateBrainstormPreview() {
             preview.innerHTML = '<p>Markdown preview not available</p>';
         }
     } catch (error) {
-        preview.innerHTML = `<p>Error rendering markdown: ${error.message}</p>`;
+        preview.innerHTML = '';
+        const p = document.createElement('p');
+        p.textContent = `Error rendering markdown: ${error.message}`;
+        preview.appendChild(p);
     }
 }
 
@@ -2159,7 +2127,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Stage click handlers
     document.querySelectorAll('.stage-item').forEach((item, index) => {
         item.addEventListener('click', () => {
-            console.log('Stage clicked:', STAGES[index], 'currentTodoId:', appState.currentTodoId);
             if (appState.currentTodoId) {
                 updateTodo(appState.currentTodoId, { stage: STAGES[index] });
             }

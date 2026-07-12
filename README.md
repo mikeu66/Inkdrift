@@ -2,6 +2,8 @@
 
 A simple, dark-mode desktop to-do application built with Electron.
 
+![To-Do App in dark mode](docs/screenshot.png)
+
 ## Features
 
 - Add, edit, and delete to-do items
@@ -54,11 +56,12 @@ This will create a distributable .app file in the `dist` folder.
 
 ```
 To-do-app/
-├── src/
-│   ├── index.html     # Main UI
-│   ├── styles.css     # Dark mode styling
-│   └── app.js         # To-do logic & localStorage
-├── main.js            # Electron main process
+├── main.js            # Electron main process (storage, AI providers, IPC)
+├── preload.js         # Context-isolated bridge between main and renderer
+├── index.html         # Main UI
+├── styles.css         # Dark mode styling
+├── app.js             # Renderer: to-do logic and views
+├── benchmark/         # Ollama vs Claude comparison for the app's AI tasks
 ├── package.json       # Dependencies
 └── README.md          # This file
 ```
@@ -67,4 +70,5 @@ To-do-app/
 
 - Electron
 - HTML/CSS/JavaScript (Vanilla)
-- LocalStorage for data persistence
+- JSON file storage in Electron's userData directory, accessed via IPC (no direct filesystem access from the renderer)
+- API keys encrypted at rest with Electron `safeStorage` (macOS Keychain)
