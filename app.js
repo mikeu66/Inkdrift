@@ -25,7 +25,7 @@ let appState = {
     }
 };
 
-const STAGES = ['brainstorm', 'planning', 'development', 'refinement', 'testing', 'done'];
+// STAGES is provided by lib/stages.js (shared with main process validation and tests)
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
 // ===================================

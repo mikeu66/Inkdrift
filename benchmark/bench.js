@@ -91,38 +91,8 @@ A simple mobile-friendly web app for saving and browsing family recipes. Two use
 
 const GRANULATE_ITEM = { text: 'Build the recipe entry form with fields for title, ingredients, and steps', hoursNeeded: 4 };
 
-// ---------- app.js parser copied verbatim ----------
-function parseJsonArrayResponse(text) {
-    let jsonText = text.trim();
-    if (jsonText.startsWith('```')) {
-        jsonText = jsonText.replace(/```json?\n?/g, '').replace(/```$/g, '').trim();
-    }
-    let parsed;
-    try {
-        parsed = JSON.parse(jsonText);
-    } catch {
-        const start = jsonText.indexOf('[');
-        const end = jsonText.lastIndexOf(']');
-        if (start === -1 || end <= start) {
-            throw new Error('AI response was not valid JSON');
-        }
-        parsed = JSON.parse(jsonText.slice(start, end + 1));
-    }
-    let items = null;
-    if (Array.isArray(parsed)) {
-        items = parsed;
-    } else if (parsed && typeof parsed === 'object') {
-        items = Object.values(parsed).find(v => Array.isArray(v)) || null;
-    }
-    if (!items) {
-        throw new Error('AI response did not contain a JSON array');
-    }
-    items = items.filter(item => item && typeof item.text === 'string' && item.text.trim().length > 0);
-    if (items.length === 0) {
-        throw new Error('AI response contained no usable items');
-    }
-    return items;
-}
+// ---------- shared parser (same module the app and tests use) ----------
+const { parseJsonArrayResponse } = require(path.join(__dirname, '..', 'lib', 'parse-json-array'));
 
 // ---------- providers (Ollama request shape copied from main.js) ----------
 async function callOllamaRaw({ systemPrompt, messages, options = {} }) {
