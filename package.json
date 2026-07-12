@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "A minimal, focused task manager for Mac",
   "main": "main.js",
-  "author": "",
-  "license": "ISC",
+  "author": "Michael Walter",
+  "license": "MIT",
   "scripts": {
     "start": "electron .",
     "build": "electron-builder",

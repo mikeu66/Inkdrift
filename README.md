@@ -1,6 +1,6 @@
-# To-Do App
+# InkDrift — To-Do App
 
-A simple, dark-mode desktop to-do application built with Electron.
+A simple, dark-mode desktop to-do application built with Electron, with optional AI-assisted planning (Claude or local Ollama).
 
 ![To-Do App in dark mode](docs/screenshot.png)
 
@@ -61,10 +61,21 @@ To-do-app/
 ├── index.html         # Main UI
 ├── styles.css         # Dark mode styling
 ├── app.js             # Renderer: to-do logic and views
+├── lib/               # Pure functions shared with tests (validation, parsing)
+├── test/              # Unit tests (node:test)
 ├── benchmark/         # Ollama vs Claude comparison for the app's AI tasks
+├── docs/              # Screenshot and design notes
 ├── package.json       # Dependencies
 └── README.md          # This file
 ```
+
+## Testing
+
+```bash
+npm test
+```
+
+Runs the unit test suite (Node's built-in `node:test`, no extra dependencies) covering input validation and AI response parsing.
 
 ## Tech Stack
 
@@ -72,3 +83,7 @@ To-do-app/
 - HTML/CSS/JavaScript (Vanilla)
 - JSON file storage in Electron's userData directory, accessed via IPC (no direct filesystem access from the renderer)
 - API keys encrypted at rest with Electron `safeStorage` (macOS Keychain)
+
+## License
+
+[MIT](LICENSE)
