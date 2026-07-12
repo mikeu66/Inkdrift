@@ -605,8 +605,9 @@ On DOMContentLoaded:
 
 ## HTML Structure (index.html)
 
-### External Dependencies
-- `marked.min.js` from CDN for markdown rendering
+### Script Dependencies
+- `marked` (bundled locally from `node_modules/marked/lib/marked.umd.js`) for markdown rendering
+- `lib/parse-json-array.js` for parsing AI JSON-array responses (shared with unit tests)
 
 ### Views
 

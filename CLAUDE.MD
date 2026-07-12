@@ -2,20 +2,24 @@
 
 ## Project Overview
 
-A simple, dark-mode desktop to-do application built with Electron. The app launches from the Mac dock and persists all tasks locally using localStorage.
+A simple, dark-mode desktop to-do application built with Electron. The app launches from the Mac dock and persists all tasks as JSON files in Electron's userData directory, accessed via IPC.
 
 ## Project Structure
 
 ```
 To-do-app/
-├── src/
-│   ├── index.html     # Main UI with checkbox list
-│   ├── styles.css     # Dark mode styling
-│   └── app.js         # To-do logic & localStorage
-├── main.js            # Electron main process
+├── main.js            # Electron main process (storage, AI providers, IPC)
+├── preload.js         # Context-isolated bridge between main and renderer
+├── index.html         # Main UI with checkbox list
+├── styles.css         # Dark mode styling
+├── app.js             # Renderer: to-do logic and views
+├── lib/               # Pure functions shared with tests (validation, parsing)
+├── test/              # Unit tests (node:test, run via npm test)
+├── benchmark/         # Ollama vs Claude comparison for the app's AI tasks
+├── docs/              # README assets (screenshot)
 ├── package.json       # Dependencies
 ├── README.md          # Project documentation
-└── CLAUDE.MD         # This file - AI assistant guidelines
+└── CLAUDE.MD          # This file - AI assistant guidelines
 ```
 
 ## Development Guidelines
@@ -54,7 +58,9 @@ To-do-app/
 - Vanilla JavaScript (ES6+) - No frameworks
 
 **Storage:**
-- LocalStorage - Persistent data storage
+- JSON files in Electron's userData directory, read/written by the main process and exposed to the renderer via IPC
+- API keys encrypted at rest with Electron safeStorage (OS keychain when available)
+- localStorage is used only for the UI theme preference
 
 ## Project Goals
 
@@ -108,10 +114,10 @@ To-do-app/
 ## Project-Specific Conventions
 
 - Keep UI barebones for now - focus on functionality
-- All data stored in localStorage
-- Dark mode is default (no light mode toggle yet)
+- All task data stored as JSON in userData via IPC (never accessed directly from the renderer)
+- Dark mode is the default theme (a light mode toggle exists in the header)
 - Minimal dependencies - vanilla JavaScript preferred
 
 ---
 
-Last updated: 2026-01-28
+Last updated: 2026-07-12
