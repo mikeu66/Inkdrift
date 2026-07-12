@@ -314,7 +314,6 @@ function renderListView() {
 }
 
 function createTodoElement(todo) {
-    console.log('createTodoElement - todo:', todo, 'id:', todo.id);
     const li = document.createElement('li');
     li.className = `todo-item ${todo.completed ? 'completed' : ''} ${todo.inProgress ? 'in-progress-item' : ''}`;
     li.draggable = true;
@@ -326,7 +325,6 @@ function createTodoElement(todo) {
         if (e.target.type === 'checkbox' || e.target.classList.contains('delete-btn')) {
             return;
         }
-        console.log('Row clicked - todo.id:', todo.id);
         navigateToDetail(todo.id);
     });
 
@@ -356,8 +354,6 @@ function createTodoElement(todo) {
     text.className = 'todo-text';
     text.textContent = todo.text;
     text.addEventListener('click', () => {
-        console.log('Text clicked - todo object:', JSON.stringify(todo, null, 2));
-        console.log('Todo keys:', Object.keys(todo));
         navigateToDetail(todo.id);
     });
 
@@ -520,14 +516,12 @@ function cleanupDropZones() {
 // DETAIL VIEW
 // ===================================
 function navigateToDetail(id) {
-    console.log('navigateToDetail called with id:', id);
     appState.currentView = 'detail';
     appState.currentTodoId = id;
     render();
 }
 
 function renderDetailView() {
-    console.log('renderDetailView - currentTodoId:', appState.currentTodoId);
     const todo = findTodoById(appState.currentTodoId);
     if (!todo) {
         console.log('Todo not found, navigating to list');
@@ -2159,7 +2153,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Stage click handlers
     document.querySelectorAll('.stage-item').forEach((item, index) => {
         item.addEventListener('click', () => {
-            console.log('Stage clicked:', STAGES[index], 'currentTodoId:', appState.currentTodoId);
             if (appState.currentTodoId) {
                 updateTodo(appState.currentTodoId, { stage: STAGES[index] });
             }

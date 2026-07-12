@@ -12,3 +12,7 @@ BACKLOG.md
 # Build artifacts
 *.icns
 *-scaled.png
+logo-original.png
+
+# Local tooling config
+.claude/settings.local.json
