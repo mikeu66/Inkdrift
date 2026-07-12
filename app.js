@@ -179,6 +179,14 @@ function getNextOrder() {
     return Math.max(...appState.todos.map(t => t.order || 0)) + 1;
 }
 
+// Show raw text safely (textContent, never innerHTML) when markdown rendering is unavailable
+function renderPlainTextFallback(container, text) {
+    container.innerHTML = '';
+    const pre = document.createElement('pre');
+    pre.textContent = text;
+    container.appendChild(pre);
+}
+
 function formatTimeSince(timestamp) {
     const ms = Date.now() - new Date(timestamp).getTime();
     const days = Math.floor(ms / (1000 * 60 * 60 * 24));
@@ -577,7 +585,7 @@ function renderDetailView() {
         planningResultSection.style.display = 'block';
         actionItemsSection.style.display = 'block';
 
-        // Render markdown
+        // Render markdown; fall back to escaped plain text
         try {
             if (typeof marked !== 'undefined') {
                 marked.setOptions({
@@ -586,10 +594,10 @@ function renderDetailView() {
                 });
                 planningResultContent.innerHTML = marked.parse(todo.brainstormResult);
             } else {
-                planningResultContent.innerHTML = `<pre>${todo.brainstormResult}</pre>`;
+                renderPlainTextFallback(planningResultContent, todo.brainstormResult);
             }
         } catch (error) {
-            planningResultContent.innerHTML = `<pre>${todo.brainstormResult}</pre>`;
+            renderPlainTextFallback(planningResultContent, todo.brainstormResult);
         }
 
         // Render action items
@@ -1696,7 +1704,10 @@ function updateBrainstormPreview() {
             preview.innerHTML = '<p>Markdown preview not available</p>';
         }
     } catch (error) {
-        preview.innerHTML = `<p>Error rendering markdown: ${error.message}</p>`;
+        preview.innerHTML = '';
+        const p = document.createElement('p');
+        p.textContent = `Error rendering markdown: ${error.message}`;
+        preview.appendChild(p);
     }
 }
 
