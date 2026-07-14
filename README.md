@@ -1,5 +1,7 @@
 # InkDrift — To-Do App
 
+[![Tests](https://github.com/mikeu66/To-do-app/actions/workflows/test.yml/badge.svg)](https://github.com/mikeu66/To-do-app/actions/workflows/test.yml)
+
 A simple, dark-mode desktop to-do application built with Electron, with optional AI-assisted planning (Claude or local Ollama).
 
 ![To-Do App in dark mode](docs/screenshot.png)
