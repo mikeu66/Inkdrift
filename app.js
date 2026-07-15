@@ -187,6 +187,24 @@ function renderPlainTextFallback(container, text) {
     container.appendChild(pre);
 }
 
+// Render markdown into a container, sanitized with DOMPurify against XSS.
+// Falls back to escaped plain text if marked or DOMPurify is unavailable.
+function renderMarkdown(container, text) {
+    if (typeof marked === 'undefined' || typeof DOMPurify === 'undefined') {
+        renderPlainTextFallback(container, text);
+        return;
+    }
+    try {
+        marked.setOptions({
+            breaks: true,
+            gfm: true
+        });
+        container.innerHTML = DOMPurify.sanitize(marked.parse(text));
+    } catch (error) {
+        renderPlainTextFallback(container, text);
+    }
+}
+
 function formatTimeSince(timestamp) {
     const ms = Date.now() - new Date(timestamp).getTime();
     const days = Math.floor(ms / (1000 * 60 * 60 * 24));
@@ -585,20 +603,8 @@ function renderDetailView() {
         planningResultSection.style.display = 'block';
         actionItemsSection.style.display = 'block';
 
-        // Render markdown; fall back to escaped plain text
-        try {
-            if (typeof marked !== 'undefined') {
-                marked.setOptions({
-                    breaks: true,
-                    gfm: true
-                });
-                planningResultContent.innerHTML = marked.parse(todo.brainstormResult);
-            } else {
-                renderPlainTextFallback(planningResultContent, todo.brainstormResult);
-            }
-        } catch (error) {
-            renderPlainTextFallback(planningResultContent, todo.brainstormResult);
-        }
+        // Render markdown (sanitized); falls back to escaped plain text
+        renderMarkdown(planningResultContent, todo.brainstormResult);
 
         // Render action items
         renderActionItems();
@@ -1656,22 +1662,7 @@ function updateBrainstormPreview() {
     const editor = document.getElementById('bsMarkdownEditor');
     const preview = document.getElementById('bsMarkdownPreview');
 
-    try {
-        if (typeof marked !== 'undefined') {
-            marked.setOptions({
-                breaks: true,
-                gfm: true
-            });
-            preview.innerHTML = marked.parse(editor.value);
-        } else {
-            preview.innerHTML = '<p>Markdown preview not available</p>';
-        }
-    } catch (error) {
-        preview.innerHTML = '';
-        const p = document.createElement('p');
-        p.textContent = `Error rendering markdown: ${error.message}`;
-        preview.appendChild(p);
-    }
+    renderMarkdown(preview, editor.value);
 }
 
 function backToWizard() {
