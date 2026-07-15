@@ -1,4 +1,4 @@
-# InkDrift — To-Do App
+# InkDrift: To-Do App
 
 [![Tests](https://github.com/mikeu66/Inkdrift/actions/workflows/test.yml/badge.svg)](https://github.com/mikeu66/Inkdrift/actions/workflows/test.yml)
 
