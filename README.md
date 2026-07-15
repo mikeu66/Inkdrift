@@ -4,7 +4,7 @@
 
 A simple, dark-mode desktop to-do application built with Electron, with optional AI-assisted planning (Claude or local Ollama).
 
-![To-Do App in dark mode](docs/screenshot.png)
+![Demo: adding a task, checking one off, and generating AI action items with a local model](docs/demo.gif)
 
 ## Features
 
