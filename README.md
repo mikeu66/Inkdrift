@@ -66,10 +66,12 @@ To-do-app/
 ├── lib/               # Pure functions shared with tests (validation, parsing)
 ├── test/              # Unit tests (node:test)
 ├── benchmark/         # Ollama vs Claude comparison for the app's AI tasks
-├── docs/              # Screenshot and design notes
+├── docs/              # Architecture notes and screenshot
 ├── package.json       # Dependencies
 └── README.md          # This file
 ```
+
+For a deeper walkthrough of the process model, storage, and security design, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Testing
 
